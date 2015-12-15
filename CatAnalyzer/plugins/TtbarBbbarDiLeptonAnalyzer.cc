@@ -16,7 +16,7 @@
 
 //#include "TopQuarkAnalysis/TopKinFitter/interface/TtFullLepKinSolver.h"
 //#include "CATTools/CatAnalyzer/interface/KinematicSolvers.h"
-//#include "CATTools/CatAnalyzer/interface/CSVHelper.h"
+#include "CATTools/CatAnalyzer/interface/CSVHelper.h"
 //#include "CATTools/CatAnalyzer/interface/LeptonWeight.h"
 
 #include "CATTools/CommonTools/interface/AnalysisHelper.h"
@@ -58,6 +58,8 @@ private:
   cat::JetCollection selectBJets(const cat::JetCollection& jets, double workingpoint) const;
   const reco::Candidate* getLast(const reco::Candidate* p) const;
   const bool isLastP( const reco::GenParticle& p) const;
+  float MuonSF(float pt, float eta);
+  float ElectronSF(float pt, float eta); // WP90
 
   void book(TTree* tree);
 
@@ -117,7 +119,7 @@ private:
   int b_NgenJet, b_NgenJet30, b_NgenJet40;
 
   //mc
-/*
+
   float  b_lepweight;
   float  b_csvweight;
   float  b_csvweight_JES_Up;
@@ -138,7 +140,11 @@ private:
   float  b_csvweight_Charm_Err1_Down;
   float  b_csvweight_Charm_Err2_Up;
   float  b_csvweight_Charm_Err2_Down;
-*/
+
+  float b_csvl_sf, b_csvl_sfup, b_csvl_sfdw;
+  float b_csvm_sf, b_csvm_sfup, b_csvm_sfdw;
+  float b_csvt_sf, b_csvt_sfup, b_csvt_sfdw;
+
 
 /* 
   //float b_jet1_pt, b_jet1_eta, b_jet1_CSVInclV2;
@@ -157,7 +163,7 @@ private:
   const static int NCutflow = 10;
   std::vector<std::vector<int> > cutflow_;
   bool runOnMC_;
-  //CSVHelper *csvWeight;
+  CSVHelper *csvWeight;
 };
 //
 // constructors and destructor
@@ -200,7 +206,7 @@ TtbarBbbarDiLeptonAnalyzer::TtbarBbbarDiLeptonAnalyzer(const edm::ParameterSet& 
   partonTop_genParticles_   = consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("partonTop_genParticles"));
   pseudoTop_   = consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("pseudoTop"));
 
-  //csvWeight = new CSVHelper();
+  csvWeight = new CSVHelper();
 /*
   auto solverPSet = iConfig.getParameter<edm::ParameterSet>("solver");
   auto algoName = solverPSet.getParameter<std::string>("algo");
@@ -256,7 +262,7 @@ void TtbarBbbarDiLeptonAnalyzer::book(TTree* tree){
   tree->Branch("puweight", &b_puweight, "puweight/F");
   tree->Branch("puweightUp", &b_puweightUp, "puweightUp/F");
   tree->Branch("puweightDown", &b_puweightDown, "puweightDown/F");
-//  tree->Branch("lepweight", &b_lepweight, "lepweight/F");
+  tree->Branch("lepweight", &b_lepweight, "lepweight/F");
   tree->Branch("genTtbarId", &b_genTtbarId, "genTtbarId/I");
   tree->Branch("genTtbarId30", &b_genTtbarId30, "genTtbarId30/I");
   tree->Branch("genTtbarId40", &b_genTtbarId40, "genTtbarId40/I");
@@ -306,7 +312,7 @@ void TtbarBbbarDiLeptonAnalyzer::book(TTree* tree){
   tree->Branch("jets_flavor","std::vector<int>",&b_jets_flavor);
   tree->Branch("jets_bDiscriminatorCSV","std::vector<float>",&b_jets_bDiscriminatorCSV);
   tree->Branch("csvd_jetid","std::vector<int>",&b_csvd_jetid);
-/*
+
   tree->Branch("csvweight", &b_csvweight, "csvweight/F");
   tree->Branch("csvweight_JES_Up",          &b_csvweight_JES_Up,          "csvweight_JES_Up/F");          
   tree->Branch("csvweight_JES_Down",        &b_csvweight_JES_Down,        "csvweight_JES_Down/F");
@@ -326,7 +332,17 @@ void TtbarBbbarDiLeptonAnalyzer::book(TTree* tree){
   tree->Branch("csvweight_Charm_Err1_Down", &b_csvweight_Charm_Err1_Down, "csvweight_Charm_Err1_Down/F");
   tree->Branch("csvweight_Charm_Err2_Up",   &b_csvweight_Charm_Err2_Up,   "csvweight_Charm_Err2_Up/F");
   tree->Branch("csvweight_Charm_Err2_Down", &b_csvweight_Charm_Err2_Down, "csvweight_Charm_Err2_Down/F");
-*/
+
+
+  tree->Branch("csvl_sf", &b_csvl_sf, "csvl_sf/F");
+  tree->Branch("csvl_sfup", &b_csvl_sfup, "csvl_sfup/F");
+  tree->Branch("csvl_sfdw", &b_csvl_sfdw, "csvl_sfdw/F");
+  tree->Branch("csvm_sf", &b_csvm_sf, "csvm_sf/F");
+  tree->Branch("csvm_sfup", &b_csvm_sfup, "csvm_sfup/F");
+  tree->Branch("csvm_sfdw", &b_csvm_sfdw, "csvm_sfdw/F");
+  tree->Branch("csvt_sf", &b_csvt_sf, "csvt_sf/F");
+  tree->Branch("csvt_sfup", &b_csvt_sfup, "csvt_sfup/F");
+  tree->Branch("csvt_sfdw", &b_csvt_sfdw, "csvt_sfdw/F");
 
 /*
   tree->Branch("jet1_pt", &b_jet1_pt, "jet1_pt/F");
@@ -381,7 +397,7 @@ void TtbarBbbarDiLeptonAnalyzer::analyze(const edm::Event& iEvent, const edm::Ev
   b_step1 = 0;b_step2 = 0;b_step3 = 0;b_step4 = 0;b_step5 = 0;b_step6 = 0;b_tri = 0;b_filtered = 0;
   b_met = -9; b_metphi = -9;
   b_weight = 1; b_weightQ = 1; b_puweight = 1; b_puweightUp = 1; b_puweightDown =1;
-  //b_lepweight = 1;
+  b_lepweight = 1;
   b_pdfWeights.clear();
 
   b_genTtbarId=0; b_genTtbarId30=0; b_genTtbarId40=0;
@@ -406,7 +422,7 @@ void TtbarBbbarDiLeptonAnalyzer::analyze(const edm::Event& iEvent, const edm::Ev
   b_jets_flavor.clear();
   b_jets_bDiscriminatorCSV.clear();
   b_csvd_jetid.clear();
-/*
+
   b_csvweight = 1;
   b_csvweight_JES_Up = 1;
   b_csvweight_JES_Down = 1;
@@ -426,7 +442,11 @@ void TtbarBbbarDiLeptonAnalyzer::analyze(const edm::Event& iEvent, const edm::Ev
   b_csvweight_Charm_Err1_Down = 1;
   b_csvweight_Charm_Err2_Up = 1;
   b_csvweight_Charm_Err2_Down = 1;
-*/
+
+
+  b_csvl_sf = 1;  b_csvl_sfup = 1;  b_csvl_sfdw = 1;
+  b_csvm_sf = 1;  b_csvm_sfup = 1;  b_csvm_sfdw = 1;
+  b_csvt_sf = 1;  b_csvt_sfup = 1;  b_csvt_sfdw = 1;
 
 /*  
   b_jet1_pt = -9; b_jet1_eta = -9; b_jet1_CSVInclV2 = -9;
@@ -643,6 +663,7 @@ void TtbarBbbarDiLeptonAnalyzer::analyze(const edm::Event& iEvent, const edm::Ev
   LeptonCollection recolep;
   selectMuons(*muons, recolep);
   selectElecs(*electrons, recolep);
+
   if (recolep.size() < 2){
     ttree_->Fill();
     return;
@@ -676,25 +697,25 @@ void TtbarBbbarDiLeptonAnalyzer::analyze(const edm::Event& iEvent, const edm::Ev
   b_lep2_pt = recolep2.pt(); b_lep2_eta = recolep2.eta(); b_lep2_phi = recolep2.phi(); b_lep2_q = recolep2.charge();
 
   //LeptonWeight LepWeight;
-  //double sf1 = 1.0;
-  //double sf2 = 1.0;
+  double sf1 = 1.0;
+  double sf2 = 1.0;
   if (pdgIdSum == 24) {
       b_lep1_RelIso = recolep1.relIso();     b_lep2_RelIso = recolep2.relIso(0.4);
-      //sf1 =  LepWeight.SF(b_lep1_pt, b_lep1_eta, LeptonWeight::Electron);
-      //sf2 =  LepWeight.SF(b_lep2_pt, b_lep2_eta, LeptonWeight::Muon); 
+      sf1 =  ElectronSF(b_lep1_pt, b_lep1_eta);
+      sf2 =  MuonSF(b_lep2_pt, b_lep2_eta); 
    } // emu
   if (pdgIdSum == 22) {
       b_lep1_RelIso = recolep1.relIso();     b_lep2_RelIso = recolep2.relIso();    
-      //sf1 =  LepWeight.SF(b_lep1_pt, b_lep1_eta, LeptonWeight::Electron);
-      //sf2 =  LepWeight.SF(b_lep2_pt, b_lep2_eta, LeptonWeight::Electron);
+      sf1 = ElectronSF(b_lep1_pt, b_lep1_eta);
+      sf2 = ElectronSF(b_lep2_pt, b_lep2_eta);
    } // ee
   if (pdgIdSum == 26) {
       b_lep1_RelIso = recolep1.relIso(0.4);  b_lep2_RelIso = recolep2.relIso(0.4); 
-      //sf1 =  LepWeight.SF(b_lep1_pt, b_lep1_eta, LeptonWeight::Muon);
-      //sf2 =  LepWeight.SF(b_lep2_pt, b_lep2_eta, LeptonWeight::Muon);
+      sf1 =  MuonSF(b_lep1_pt, b_lep1_eta);
+      sf2 =  MuonSF(b_lep2_pt, b_lep2_eta);
    } // mumu
 
-  //if(runOnMC_) b_lepweight = sf1 * sf2;
+  if(runOnMC_) b_lepweight = sf1 * sf2;
 
   const auto tlv_ll = recolep1.p4()+recolep2.p4();
   b_ll_pt = tlv_ll.Pt(); b_ll_eta = tlv_ll.Eta(); b_ll_phi = tlv_ll.Phi(); b_ll_m = tlv_ll.M();
@@ -709,6 +730,7 @@ void TtbarBbbarDiLeptonAnalyzer::analyze(const edm::Event& iEvent, const edm::Ev
     cutflow_[5][b_channel]++;
   }
 
+  //JetCollection&& selectedJets = selectJets(*jets, recolep);
   JetCollection&& selectedJets = selectJets(*jets, recolep);
   JetCollection&& selectedBJetsL = selectBJets(selectedJets,0.605);
   JetCollection&& selectedBJetsM = selectBJets(selectedJets,0.890);
@@ -721,13 +743,32 @@ void TtbarBbbarDiLeptonAnalyzer::analyze(const edm::Event& iEvent, const edm::Ev
     int flavor = jet1->partonFlavour();
     mapJetBDiscriminator[idx] = bDisCSV;
     idx++;
+    //b_jets_pt.push_back(jet1->p4().pt()*jet1->smearedRes());
     b_jets_pt.push_back(jet1->p4().pt());
     b_jets_eta.push_back(jet1->p4().eta());
     b_jets_phi.push_back(jet1->p4().phi());
     b_jets_flavor.push_back(flavor);
     b_jets_bDiscriminatorCSV.push_back(bDisCSV);
+
+    if (runOnMC_) {
+      Jet::JETFLAV fla = Jet::JETFLAV_LIGHT;
+      if (abs(flavor)==4){ fla=Jet::JETFLAV_C; }
+      if (abs(flavor)==5){ fla=Jet::JETFLAV_B; }
+      b_csvl_sf = b_csvl_sf*(jet1->scaleFactorCSVv2(Jet::BTAGCSV_LOOSE,0,fla));
+      b_csvl_sfup = b_csvl_sfup*(jet1->scaleFactorCSVv2(Jet::BTAGCSV_LOOSE,1,fla));
+      b_csvl_sfdw = b_csvl_sfdw*(jet1->scaleFactorCSVv2(Jet::BTAGCSV_LOOSE,-1,fla));
+
+      b_csvm_sf = b_csvm_sf*(jet1->scaleFactorCSVv2(Jet::BTAGCSV_MEDIUM,0,fla));
+      b_csvm_sfup = b_csvm_sfup*(jet1->scaleFactorCSVv2(Jet::BTAGCSV_MEDIUM,1,fla));
+      b_csvm_sfdw = b_csvm_sfdw*(jet1->scaleFactorCSVv2(Jet::BTAGCSV_MEDIUM,-1,fla));
+
+      b_csvt_sf = b_csvt_sf*(jet1->scaleFactorCSVv2(Jet::BTAGCSV_TIGHT,0,fla));
+      b_csvt_sfup = b_csvt_sfup*(jet1->scaleFactorCSVv2(Jet::BTAGCSV_TIGHT,1,fla));
+      b_csvt_sfdw = b_csvt_sfdw*(jet1->scaleFactorCSVv2(Jet::BTAGCSV_TIGHT,-1,fla));
+    }
   }
-  /*if (runOnMC_){
+  
+ if (runOnMC_){
      //double csvWgtHF, csvWgtLF, csvWgtCF;
      b_csvweight         = csvWeight->getCSVWeight(selectedJets, 0);//); 
      b_csvweight_JES_Up  = csvWeight->getCSVWeight(selectedJets, 7);
@@ -749,7 +790,7 @@ void TtbarBbbarDiLeptonAnalyzer::analyze(const edm::Event& iEvent, const edm::Ev
      b_csvweight_Charm_Err2_Up  = csvWeight->getCSVWeight(selectedJets, 23);
      b_csvweight_Charm_Err2_Down= csvWeight->getCSVWeight(selectedJets, 24);
 
-  }*/
+  }
   //csvd order
   std::vector< std::pair<int,float> > vecJetBDisc(mapJetBDiscriminator.begin(), mapJetBDiscriminator.end());
   std::sort(vecJetBDisc.begin(), vecJetBDisc.end(), bigger_second<data_t>());
@@ -914,7 +955,7 @@ void TtbarBbbarDiLeptonAnalyzer::selectMuons(const cat::MuonCollection& muons, L
     if (std::abs(mu.eta()) > 2.4) continue;
     //if (!mu.isMediumMuon()) continue;
     if (!mu.isTightMuon()) continue;
-    if (mu.relIso(0.4) > 0.15) continue;
+    //if (mu.relIso(0.4) > 0.15) continue;
     //printf("muon with pt %4.1f, POG loose id %d, tight id %d\n", mu.pt(), mu.isLooseMuon(), mu.isTightMuon());
     selmuons.push_back(mu);
   }
@@ -928,7 +969,8 @@ void TtbarBbbarDiLeptonAnalyzer::selectElecs(const cat::ElectronCollection& elec
     if (std::abs(el.eta()) > 2.4) continue;
     //if (!el.electronID("cutBasedElectronID-Spring15-50ns-V1-standalone-medium")) continue;
     //if (el.electronID("cutBasedElectronID-PHYS14-PU20bx25-V2-standalone-medium") == 0) continue;
-    if ( !el.electronID("cutBasedElectronID-Spring15-25ns-V1-standalone-medium") ) continue;
+    if (!el.electronID("mvaEleID-Spring15-25ns-Trig-V1-wp90")) continue;
+    //if ( !el.electronID("cutBasedElectronID-Spring15-25ns-V1-standalone-medium") ) continue;
     //if (!el.passConversionVeto()) continue;
     //if (!el.isPF()) continue;
 
@@ -937,10 +979,12 @@ void TtbarBbbarDiLeptonAnalyzer::selectElecs(const cat::ElectronCollection& elec
   }
 }
 
+
 cat::JetCollection TtbarBbbarDiLeptonAnalyzer::selectJets(const cat::JetCollection& jets, const LeptonCollection& recolep) const
 {
   cat::JetCollection seljets;
   for (auto& jet : jets) {
+    //if (jet.pt()*jet.smearedRes() < 30.) continue;
     if (jet.pt() < 30.) continue;
     if (std::abs(jet.eta()) > 2.4)  continue;
     if (!jet.LooseId()) continue;
@@ -968,6 +1012,135 @@ cat::JetCollection TtbarBbbarDiLeptonAnalyzer::selectBJets(const JetCollection& 
   }
   return selBjets;
 }
+float TtbarBbbarDiLeptonAnalyzer::MuonSF(float pt, float eta)
+{
+if (eta >=-2.4 && eta <-2.01){
+  if     (pt > 20.0 && pt <=25.0 )  return (float) 0.96652; 
+  else if(pt > 25.0 && pt <=30.0 )  return (float) 0.97249; 
+  else if(pt > 30.0 && pt <=40.0 )  return (float) 0.98056; 
+  else if(pt > 40.0 && pt <=50.0 )  return (float) 0.98035; 
+  else if(pt > 50.0 && pt <=60.0 )  return (float) 0.98217; 
+  else if(pt > 60.0 )  return (float) 0.93115; 
+  else return (float) 1.0;
+}
+else if (eta >=-2.01 && eta <-1.2){
+  if(pt > 20.0 && pt <=25.0 )  return (float) 0.99707; 
+  else if(pt > 25.0 && pt <=30.0 )  return (float) 0.9941; 
+  else if(pt > 30.0 && pt <=40.0 )  return (float) 0.9938; 
+  else if(pt > 40.0 && pt <=50.0 )  return (float) 0.9935; 
+  else if(pt > 50.0 && pt <=60.0 )  return (float) 0.9876; 
+  else if(pt > 60.0 )  return (float) 0.98751; 
+  else return (float) 1.0;
+}
+else if (eta >=-1.2 && eta <-0.9){
+  if(pt > 20.0 && pt <=25.0 )  return (float) 0.9680; 
+  else if(pt > 25.0 && pt <=30.0 )  return (float) 0.9795; 
+  else if(pt > 30.0 && pt <=40.0 )  return (float) 0.9802; 
+  else if(pt > 40.0 && pt <=50.0 )  return (float) 0.9835; 
+  else if(pt > 50.0 && pt <=60.0 )  return (float) 0.9806; 
+  else if(pt > 60.0 )  return (float) 0.98020; 
+  else return (float) 1.0;
+}
+else if (eta >=-0.9 && eta <-0.0){
+  if(pt > 20.0 && pt <=25.0 )  return (float) 0.97835; 
+  else if(pt > 25.0 && pt <=30.0 )  return (float) 0.9804; 
+  else if(pt > 30.0 && pt <=40.0 )  return (float) 0.9875; 
+  else if(pt > 40.0 && pt <=50.0 )  return (float) 0.9877; 
+  else if(pt > 50.0 && pt <=60.0 )  return (float) 0.9808; 
+  else if(pt > 60.0)  return (float) 0.98220; 
+  else return (float) 1.0;
+}
+else if (eta >=0.0 && eta <0.9){
+  if(pt > 20.0 && pt <=25.0 )  return (float) 0.9783; 
+  else if(pt > 25.0 && pt <=30.0 )  return (float) 0.9804; 
+  else if(pt > 30.0 && pt <=40.0 )  return (float) 0.9875; 
+  else if(pt > 40.0 && pt <=50.0 )  return (float) 0.9877; 
+  else if(pt > 50.0 && pt <=60.0 )  return (float) 0.9808; 
+  else if(pt > 60.0 )  return (float) 0.98220; 
+  else return (float) 1.0;
+}
+else if (eta >=0.9 && eta <1.2){
+  if(pt > 20.0 && pt <=25.0 )  return (float) 0.9680; 
+  else if(pt > 25.0 && pt <=30.0 )  return (float) 0.9795; 
+  else if(pt > 30.0 && pt <=40.0 )  return (float) 0.9802; 
+  else if(pt > 40.0 && pt <=50.0 )  return (float) 0.9835; 
+  else if(pt > 50.0 && pt <=60.0 )  return (float) 0.9806; 
+  else if(pt > 60.0 )  return (float) 0.98020; 
+  else return (float) 1.0;
+}
+else if (eta >=1.2 && eta <2.1){
+  if     (pt > 20.0 && pt <=25.0 )  return (float) 0.99707; 
+  else if(pt > 25.0 && pt <=30.0 )  return (float) 0.99410; 
+  else if(pt > 30.0 && pt <=40.0 )  return (float) 0.99382; 
+  else if(pt > 40.0 && pt <=50.0 )  return (float) 0.99353; 
+  else if(pt > 50.0 && pt <=60.0 )  return (float) 0.98761; 
+  else if(pt > 60.0)  return (float) 0.98751; 
+  else return (float) 1.0;
+}
+else if (eta >=2.1 && eta <=2.4){
+  if     (pt > 20.0 && pt <=25.0 )  return (float) 0.96652; 
+  else if(pt > 25.0 && pt <=30.0 )  return (float) 0.9725; 
+  else if(pt > 30.0 && pt <=40.0 )  return (float) 0.98057; 
+  else if(pt > 40.0 && pt <=50.0 )  return (float) 0.98035; 
+  else if(pt > 50.0 && pt <=60.0 )  return (float) 0.98217; 
+  else if(pt > 60.0 )  return (float) 0.9311; 
+  else return (float) 1.;
+}
+else return (float) 1.;
+
+};
+
+float TtbarBbbarDiLeptonAnalyzer::ElectronSF(float pt, float eta) // WP90
+{
+if (pt>15. && pt <= 25.){
+  if      ( eta>-2.5 && eta <= -1.5) return (float) 0.96;
+  else if ( eta>-1.5 && eta <= -1.0) return (float) 0.95;
+  else if ( eta>-1.0 && eta <= 0 ) return (float) 0.98;
+  else if ( eta>0 && eta <= 1.0) return (float) 0.99;
+  else if ( eta>1.0 && eta <= 1.5) return (float) 0.99;
+  else if ( eta>1.5 && eta <= 2.5) return (float) 0.97;
+  else return (float) 1.;
+}
+else if (pt>25. && pt <= 35.){
+  if      ( eta>-2.5 && eta <= -1.5) return (float) 0.98;
+  else if ( eta>-1.5 && eta <= -1.0) return (float) 0.97;
+  else if ( eta>-1.0 && eta <= 0 ) return (float) 0.97;
+  else if ( eta>0 && eta <= 1.0) return (float) 0.99;
+  else if ( eta>1.0 && eta <= 1.5) return (float) 0.99;
+  else if ( eta>1.5 && eta <= 2.5) return (float) 0.98;
+  else return (float) 1.;
+}
+else if (pt>35. && pt <= 45.){ 
+  if      ( eta>-2.5 && eta <= -1.5) return (float) 0.98;
+  else if ( eta>-1.5 && eta <= -1.0) return (float) 0.99;
+  else if ( eta>-1.0 && eta <= 0 ) return (float) 0.99;
+  else if ( eta>0 && eta <= 1.0) return (float) 0.99;
+  else if ( eta>1.0 && eta <= 1.5) return (float) 0.99;
+  else if ( eta>1.5 && eta <= 2.5) return (float) 0.98;
+  else return (float) 1.;
+}
+else if (pt>45. && pt <= 55.){
+  if      ( eta>-2.5 && eta <= -1.5) return (float) 0.98;
+  else if ( eta>-1.5 && eta <= -1.0) return (float) 0.99;
+  else if ( eta>-1.0 && eta <= 0 ) return (float) 0.99;
+  else if ( eta>0. && eta <= 1.0) return (float) 0.99;
+  else if ( eta>1.0 && eta <= 1.5) return (float) 0.99;
+  else if ( eta>1.5 && eta <= 2.5) return (float) 0.99;
+  else return (float) 1.;
+}
+else if (pt>55.){
+  if      ( eta>-2.5 && eta <= -1.5) return (float) 0.99;
+  else if ( eta>-1.5 && eta <= -1.0) return (float) 0.99;
+  else if ( eta>-1.0 && eta <= 0 ) return (float) 0.99;
+  else if ( eta>0 && eta <= 1.0) return (float) 1.00;
+  else if ( eta>1.0 && eta <= 1.5) return (float) 0.99;
+  else if ( eta>1.5 && eta <= 2.5) return (float) 0.99;
+  else return (float) 1.;
+}
+else return (float) 1.00;
+
+};
+
 
 //define this as a plug-in
 DEFINE_FWK_MODULE(TtbarBbbarDiLeptonAnalyzer);
