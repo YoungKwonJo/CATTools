@@ -1014,7 +1014,7 @@ cat::JetCollection TtbarBbbarDiLeptonAnalyzer::selectBJets(const JetCollection& 
 }
 float TtbarBbbarDiLeptonAnalyzer::MuonSF(float pt, float eta)
 {
-if (eta >=-2.4 && eta <-2.01){
+if (eta >=-2.4 && eta <-2.1){
   if     (pt > 20.0 && pt <=25.0 )  return (float) 0.96652; 
   else if(pt > 25.0 && pt <=30.0 )  return (float) 0.97249; 
   else if(pt > 30.0 && pt <=40.0 )  return (float) 0.98056; 
@@ -1023,7 +1023,7 @@ if (eta >=-2.4 && eta <-2.01){
   else if(pt > 60.0 )  return (float) 0.93115; 
   else return (float) 1.0;
 }
-else if (eta >=-2.01 && eta <-1.2){
+else if (eta >=-2.1 && eta <-1.2){
   if(pt > 20.0 && pt <=25.0 )  return (float) 0.99707; 
   else if(pt > 25.0 && pt <=30.0 )  return (float) 0.9941; 
   else if(pt > 30.0 && pt <=40.0 )  return (float) 0.9938; 
