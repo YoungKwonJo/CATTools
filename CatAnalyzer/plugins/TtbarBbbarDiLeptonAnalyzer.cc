@@ -13,6 +13,7 @@
 #include "CATTools/DataFormats/interface/Electron.h"
 #include "CATTools/DataFormats/interface/Jet.h"
 #include "CATTools/DataFormats/interface/MET.h"
+#include "CATTools/DataFormats/interface/GenTop.h"
 
 //#include "TopQuarkAnalysis/TopKinFitter/interface/TtFullLepKinSolver.h"
 //#include "CATTools/CatAnalyzer/interface/KinematicSolvers.h"
@@ -77,6 +78,8 @@ private:
   edm::EDGetTokenT<vector<float> > pdfWeightsToken_;
   edm::EDGetTokenT<reco::GenJetCollection> GenJetsToken_;
   edm::EDGetTokenT<reco::GenParticleCollection> GenParticlesToken_;
+
+  edm::EDGetTokenT<cat::GenTopCollection> GenTopToken_;
 
   edm::EDGetTokenT<int> genTtbarIdToken_;
   edm::EDGetTokenT<int> genTtbarIdToken30_;
@@ -144,7 +147,71 @@ private:
   float b_csvl_sf, b_csvl_sfup, b_csvl_sfdw;
   float b_csvm_sf, b_csvm_sfup, b_csvm_sfdw;
   float b_csvt_sf, b_csvt_sfup, b_csvt_sfdw;
+/////////
+  float  lepton1_pt       ;//  cms.string("lepton1().Pt()"),
+  float  lepton1_eta      ;//  cms.string("lepton1().Eta()"),
+  float  lepton1_phi      ;//  cms.string("lepton1().Phi()"),
+  float  lepton2_pt       ;//  cms.string("lepton2().Pt()"),
+  float  lepton2_eta      ;//  cms.string("lepton2().Eta()"),
+  float  lepton2_phi      ;//  cms.string("lepton2().Phi()"),
 
+  bool   allHadronic      ;//  cms.string("allHadronic"),
+  bool   semiLeptonic     ;//  cms.string("semiLeptonic"),
+  bool   diLeptonicMuoMuo ;//  cms.string("diLeptonicMuoMuo"),
+  bool   diLeptonicMuoEle ;//  cms.string("diLeptonicMuoEle"),
+  bool   diLeptonicEleEle ;//  cms.string("diLeptonicEleEle"),
+  bool   diLeptonicTauMuo ;//  cms.string("diLeptonicTauMuo"),
+  bool   diLeptonicTauEle ;//  cms.string("diLeptonicTauEle"),
+  bool   diLeptonicTauTau ;//  cms.string("diLeptonicTauTau"),
+
+  int    NbJets1           ;//  cms.string("NbJets(1)"),
+  int    NbJets201         ;//  cms.string("NbJets20(1)"),
+  int    NbJets251         ;//  cms.string("NbJets25(1)"),
+  int    NbJets301         ;//  cms.string("NbJets30(1)"),
+  int    NbJets401         ;//  cms.string("NbJets40(1)"),
+  int    NaddbJets1        ;//  cms.string("NaddbJets(1)"),
+  int    NaddbJets201      ;//  cms.string("NaddbJets20(1)"),
+  int    NaddbJets401      ;//  cms.string("NaddbJets40(1)"),
+  int    NcJets1           ;//  cms.string("NcJets(1)"),
+  int    NcJets101         ;//  cms.string("NcJets10(1)"),
+  int    NcJets151         ;//  cms.string("NcJets15(1)"),
+  int    NcJets201         ;//  cms.string("NcJets20(1)"),
+  int    NcJets251         ;//  cms.string("NcJets25(1)"),
+  int    NcJets301         ;//  cms.string("NcJets30(1)"),
+  int    NcJets401         ;//  cms.string("NcJets40(1)"),
+  int    NbJets           ;//  cms.string("NbJets(0)"),
+  int    NbJets20         ;//  cms.string("NbJets20(0)"),
+  int    NbJets25         ;//  cms.string("NbJets25(0)"),
+  int    NbJets30         ;//  cms.string("NbJets30(0)"),
+  int    NbJets40         ;//  cms.string("NbJets40(0)"),
+  int    NaddbJets        ;//  cms.string("NaddbJets(0)"),
+  int    NaddbJets20      ;//  cms.string("NaddbJets20(0)"),
+  int    NaddbJets40      ;//  cms.string("NaddbJets40(0)"),
+  int    NcJets           ;//  cms.string("NcJets(0)"),
+  int    NcJets10         ;//  cms.string("NcJets10(0)"),
+  int    NcJets15         ;//  cms.string("NcJets15(0)"),
+  int    NcJets20         ;//  cms.string("NcJets20(0)"),
+  int    NcJets25         ;//  cms.string("NcJets25(0)"),
+  int    NcJets30         ;//  cms.string("NcJets30(0)"),
+  int    NcJets40         ;//  cms.string("NcJets40(0)"),
+  int    NJets            ;//  cms.string("NJets"),
+  int    NJets10          ;//  cms.string("NJets10"),
+  int    NJets20          ;//  cms.string("NJets20"),
+  int    NJets25          ;//  cms.string("NJets25"),
+  int    NJets30          ;//  cms.string("NJets30"),
+  int    NJets40          ;//  cms.string("NJets40"),
+  int    NaddJets20       ;//  cms.string("NaddJets20"),
+  int    NaddJets40       ;//  cms.string("NaddJets40"),
+  int    NbQuarksTop      ;//  cms.string("NbQuarksTop"),
+  int    NbQuarksNoTop    ;//  cms.string("NbQuarksNoTop"),
+  int    NbQuarks         ;//  cms.string("NbQuarks"),
+  int    NbQuarks20       ;//  cms.string("NbQuarks20"),
+  int    NbQuarks40       ;//  cms.string("NbQuarks40"),
+  int    NaddbQuarks20    ;//  cms.string("NaddbQuarks20"),
+  int    NaddbQuarks40    ;//  cms.string("NaddbQuarks40"),
+  int    NcQuarks         ;//  cms.string("NcQuarks"),
+
+////////
 
 /* 
   //float b_jet1_pt, b_jet1_eta, b_jet1_CSVInclV2;
@@ -192,6 +259,7 @@ TtbarBbbarDiLeptonAnalyzer::TtbarBbbarDiLeptonAnalyzer(const edm::ParameterSet& 
   GenJetsToken_     = consumes<reco::GenJetCollection>(iConfig.getParameter<edm::InputTag>("GenJets"));
   GenParticlesToken_     = consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("GenParticles"));
 
+  GenTopToken_     = consumes<cat::GenTopCollection>(iConfig.getParameter<edm::InputTag>("GenTop"));
   //NgenJet30Token_           = consumes<int>(iConfig.getParameter<edm::InputTag>("NgenJet30"));
   //genTtbarLeptonDecayToken_ = consumes<int>(iConfig.getParameter<edm::InputTag>("genTtbarLeptonDecay"));
 
@@ -343,6 +411,69 @@ void TtbarBbbarDiLeptonAnalyzer::book(TTree* tree){
   tree->Branch("csvt_sf", &b_csvt_sf, "csvt_sf/F");
   tree->Branch("csvt_sfup", &b_csvt_sfup, "csvt_sfup/F");
   tree->Branch("csvt_sfdw", &b_csvt_sfdw, "csvt_sfdw/F");
+/////////////////////////////
+   tree->Branch("lepton1_pt",    &lepton1_pt   , "lepton1_pt/F"); 
+   tree->Branch("lepton1_eta",   &lepton1_eta  , "lepton1_eta/F");
+   tree->Branch("lepton1_phi",   &lepton1_phi  , "lepton1_phi/F");
+   tree->Branch("lepton2_pt",    &lepton2_pt   , "lepton2_pt/F"); 
+   tree->Branch("lepton2_eta",   &lepton2_eta  , "lepton2_eta/F");
+   tree->Branch("lepton2_phi",   &lepton2_phi  , "lepton2_phi/F");
+
+  tree->Branch("allHadronic",      &allHadronic        , "allHadronic/O");    
+  tree->Branch("semiLeptonic",     &semiLeptonic       , "semiLeptonic/O");     
+  tree->Branch("diLeptonicMuoMuo", &diLeptonicMuoMuo   , "diLeptonicMuoMuo/O"); 
+  tree->Branch("diLeptonicMuoEle", &diLeptonicMuoEle   , "diLeptonicMuoEle/O"); 
+  tree->Branch("diLeptonicEleEle", &diLeptonicEleEle   , "diLeptonicEleEle/O"); 
+  tree->Branch("diLeptonicTauMuo", &diLeptonicTauMuo   , "diLeptonicTauMuo/O"); 
+  tree->Branch("diLeptonicTauEle", &diLeptonicTauEle   , "diLeptonicTauEle/O"); 
+  tree->Branch("diLeptonicTauTau", &diLeptonicTauTau   , "diLeptonicTauTau/O"); 
+
+  tree->Branch("NbJets1",         &NbJets1        , "NbJets1/I");         
+  tree->Branch("NbJets201",       &NbJets201      , "NbJets201/I");      
+  tree->Branch("NbJets251",       &NbJets251      , "NbJets251/I");      
+  tree->Branch("NbJets301",       &NbJets301      , "NbJets301/I");      
+  tree->Branch("NbJets401",       &NbJets401      , "NbJets401/I");      
+  tree->Branch("NaddbJets1",      &NaddbJets1     , "NaddbJets1/I");     
+  tree->Branch("NaddbJets201",    &NaddbJets201   , "NaddbJets201/I");   
+  tree->Branch("NaddbJets401",    &NaddbJets401   , "NaddbJets401/I");   
+  tree->Branch("NcJets1",         &NcJets1        , "NcJets1/I");        
+  tree->Branch("NcJets101",       &NcJets101      , "NcJets101/I");      
+  tree->Branch("NcJets151",       &NcJets151      , "NcJets151/I");      
+  tree->Branch("NcJets201",       &NcJets201      , "NcJets201/I");      
+  tree->Branch("NcJets251",       &NcJets251      , "NcJets251/I");      
+  tree->Branch("NcJets301",       &NcJets301      , "NcJets301/I");      
+  tree->Branch("NcJets401",       &NcJets401      , "NcJets401/I");      
+  tree->Branch("NbJets",          &NbJets         , "NbJets/I");         
+  tree->Branch("NbJets20",        &NbJets20       , "NbJets20/I");       
+  tree->Branch("NbJets25",        &NbJets25       , "NbJets25/I");       
+  tree->Branch("NbJets30",        &NbJets30       , "NbJets30/I");       
+  tree->Branch("NbJets40",        &NbJets40       , "NbJets40/I");       
+  tree->Branch("NaddbJets",       &NaddbJets      , "NaddbJets/I");      
+  tree->Branch("NaddbJets20",     &NaddbJets20    , "NaddbJets20/I");    
+  tree->Branch("NaddbJets40",     &NaddbJets40    , "NaddbJets40/I");    
+  tree->Branch("NcJets",          &NcJets         , "NcJets/I");         
+  tree->Branch("NcJets10",        &NcJets10       , "NcJets10/I");       
+  tree->Branch("NcJets15",        &NcJets15       , "NcJets15/I");       
+  tree->Branch("NcJets20",        &NcJets20       , "NcJets20/I");       
+  tree->Branch("NcJets25",        &NcJets25       , "NcJets25/I");       
+  tree->Branch("NcJets30",        &NcJets30       , "NcJets30/I");       
+  tree->Branch("NcJets40",        &NcJets40       , "NcJets40/I");       
+  tree->Branch("NJets",           &NJets          , "NJets/I");          
+  tree->Branch("NJets10",         &NJets10        , "NJets10/I");        
+  tree->Branch("NJets20",         &NJets20        , "NJets20/I");        
+  tree->Branch("NJets25",         &NJets25        , "NJets25/I");        
+  tree->Branch("NJets30",         &NJets30        , "NJets30/I");        
+  tree->Branch("NJets40",         &NJets40        , "NJets40/I");        
+  tree->Branch("NaddJets20",      &NaddJets20     , "NaddJets20/I");     
+  tree->Branch("NaddJets40",      &NaddJets40     , "NaddJets40/I");     
+  tree->Branch("NbQuarksTop",     &NbQuarksTop    , "NbQuarksTop/I");    
+  tree->Branch("NbQuarksNoTop",   &NbQuarksNoTop  , "NbQuarksNoTop/I");  
+  tree->Branch("NbQuarks",        &NbQuarks       , "NbQuarks/I");       
+  tree->Branch("NbQuarks20",      &NbQuarks20     , "NbQuarks20/I");     
+  tree->Branch("NbQuarks40",      &NbQuarks40     , "NbQuarks40/I");     
+  tree->Branch("NaddbQuarks20",   &NaddbQuarks20  , "NaddbQuarks20/I");  
+  tree->Branch("NaddbQuarks40",   &NaddbQuarks40  , "NaddbQuarks40/I");  
+  tree->Branch("NcQuarks",        &NcQuarks       , "NcQuarks/I");       
 
 /*
   tree->Branch("jet1_pt", &b_jet1_pt, "jet1_pt/F");
@@ -447,6 +578,70 @@ void TtbarBbbarDiLeptonAnalyzer::analyze(const edm::Event& iEvent, const edm::Ev
   b_csvl_sf = 1;  b_csvl_sfup = 1;  b_csvl_sfdw = 1;
   b_csvm_sf = 1;  b_csvm_sfup = 1;  b_csvm_sfdw = 1;
   b_csvt_sf = 1;  b_csvt_sfup = 1;  b_csvt_sfdw = 1;
+//////////////////////
+   lepton1_pt  =0.0      ;//  cms.string("lepton1().Pt()"),
+   lepton1_eta =-9.0     ;//  cms.string("lepton1().Eta()"),
+   lepton1_phi =-9.0     ;//  cms.string("lepton1().Phi()"),
+   lepton2_pt  =0.0      ;//  cms.string("lepton2().Pt()"),
+   lepton2_eta =-9.0     ;//  cms.string("lepton2().Eta()"),
+   lepton2_phi =-9.0     ;//  cms.string("lepton2().Phi()"),
+
+   allHadronic      =false;//  cms.string("allHadronic"),
+   semiLeptonic     =false;//  cms.string("semiLeptonic"),
+   diLeptonicMuoMuo =false;//  cms.string("diLeptonicMuoMuo"),
+   diLeptonicMuoEle =false;//  cms.string("diLeptonicMuoEle"),
+   diLeptonicEleEle =false;//  cms.string("diLeptonicEleEle"),
+   diLeptonicTauMuo =false;//  cms.string("diLeptonicTauMuo"),
+   diLeptonicTauEle =false;//  cms.string("diLeptonicTauEle"),
+   diLeptonicTauTau =false;//  cms.string("diLeptonicTauTau"),
+
+   NbJets1           =0;//  cms.string("NbJets(1)"),
+   NbJets201         =0;//  cms.string("NbJets20(1)"),
+   NbJets251         =0;//  cms.string("NbJets25(1)"),
+   NbJets301         =0;//  cms.string("NbJets30(1)"),
+   NbJets401         =0;//  cms.string("NbJets40(1)"),
+   NaddbJets1        =0;//  cms.string("NaddbJets(1)"),
+   NaddbJets201      =0;//  cms.string("NaddbJets20(1)"),
+   NaddbJets401      =0;//  cms.string("NaddbJets40(1)"),
+   NcJets1           =0;//  cms.string("NcJets(1)"),
+   NcJets101         =0;//  cms.string("NcJets10(1)"),
+   NcJets151         =0;//  cms.string("NcJets15(1)"),
+   NcJets201         =0;//  cms.string("NcJets20(1)"),
+   NcJets251         =0;//  cms.string("NcJets25(1)"),
+   NcJets301         =0;//  cms.string("NcJets30(1)"),
+   NcJets401         =0;//  cms.string("NcJets40(1)"),
+   NbJets           =0;//  cms.string("NbJets(0)"),
+   NbJets20         =0;//  cms.string("NbJets20(0)"),
+   NbJets25         =0;//  cms.string("NbJets25(0)"),
+   NbJets30         =0;//  cms.string("NbJets30(0)"),
+   NbJets40         =0;//  cms.string("NbJets40(0)"),
+   NaddbJets        =0;//  cms.string("NaddbJets(0)"),
+   NaddbJets20      =0;//  cms.string("NaddbJets20(0)"),
+   NaddbJets40      =0;//  cms.string("NaddbJets40(0)"),
+   NcJets           =0;//  cms.string("NcJets(0)"),
+   NcJets10         =0;//  cms.string("NcJets10(0)"),
+   NcJets15         =0;//  cms.string("NcJets15(0)"),
+   NcJets20         =0;//  cms.string("NcJets20(0)"),
+   NcJets25         =0;//  cms.string("NcJets25(0)"),
+   NcJets30         =0;//  cms.string("NcJets30(0)"),
+   NcJets40         =0;//  cms.string("NcJets40(0)"),
+   NJets            =0;//  cms.string("NJets"),
+   NJets10          =0;//  cms.string("NJets10"),
+   NJets20          =0;//  cms.string("NJets20"),
+   NJets25          =0;//  cms.string("NJets25"),
+   NJets30          =0;//  cms.string("NJets30"),
+   NJets40          =0;//  cms.string("NJets40"),
+   NaddJets20       =0;//  cms.string("NaddJets20"),
+   NaddJets40       =0;//  cms.string("NaddJets40"),
+   NbQuarksTop      =0;//  cms.string("NbQuarksTop"),
+   NbQuarksNoTop    =0;//  cms.string("NbQuarksNoTop"),
+   NbQuarks         =0;//  cms.string("NbQuarks"),
+   NbQuarks20       =0;//  cms.string("NbQuarks20"),
+   NbQuarks40       =0;//  cms.string("NbQuarks40"),
+   NaddbQuarks20    =0;//  cms.string("NaddbQuarks20"),
+   NaddbQuarks40    =0;//  cms.string("NaddbQuarks40"),
+   NcQuarks         =0;//  cms.string("NcQuarks"),
+
 
 /*  
   b_jet1_pt = -9; b_jet1_eta = -9; b_jet1_CSVInclV2 = -9;
@@ -458,9 +653,82 @@ void TtbarBbbarDiLeptonAnalyzer::analyze(const edm::Event& iEvent, const edm::Ev
   b_is3lep = -9;
 
   cutflow_[0][b_channel]++;
-  
+ 
+ 
   edm::Handle<int> partonTop_channel;
   edm::Handle<reco::GenParticleCollection> genParticles;
+////////////
+  edm::Handle<cat::GenTopCollection> genTop;
+  std::cout << "!!reading genTop" << std::endl;
+  if ( iEvent.getByToken(GenTopToken_, genTop)){
+    //for (auto& genTop : genTops) {
+    
+     std::cout << "reading genTop" << std::endl;
+     lepton1_pt  =genTop->at(0).lepton1().Pt();
+     lepton1_eta =genTop->at(0).lepton1().Eta();
+     lepton1_phi =genTop->at(0).lepton1().Phi();
+     lepton2_pt  =genTop->at(0).lepton2().Pt();
+     lepton2_eta =genTop->at(0).lepton2().Eta();
+     lepton2_phi =genTop->at(0).lepton2().Phi();
+    
+     allHadronic      =genTop->at(0).allHadronic();
+     semiLeptonic     =genTop->at(0).semiLeptonic();
+     diLeptonicMuoMuo =genTop->at(0).diLeptonicMuoMuo();
+     diLeptonicMuoEle =genTop->at(0).diLeptonicMuoEle();
+     diLeptonicEleEle =genTop->at(0).diLeptonicEleEle();
+     diLeptonicTauMuo =genTop->at(0).diLeptonicTauMuo();
+     diLeptonicTauEle =genTop->at(0).diLeptonicTauEle();
+     diLeptonicTauTau =genTop->at(0).diLeptonicTauTau();
+    
+     NbJets1           =genTop->at(0).NbJets(1);
+     NbJets201         =genTop->at(0).NbJets20(1);
+     NbJets251         =genTop->at(0).NbJets25(1);
+     NbJets301         =genTop->at(0).NbJets30(1);
+     NbJets401         =genTop->at(0).NbJets40(1);
+     NaddbJets1        =genTop->at(0).NaddbJets(1);
+     NaddbJets201      =genTop->at(0).NaddbJets20(1);
+     NaddbJets401      =genTop->at(0).NaddbJets40(1);
+     NcJets1           =genTop->at(0).NcJets(1);
+     NcJets101         =genTop->at(0).NcJets10(1);
+     NcJets151         =genTop->at(0).NcJets15(1);
+     NcJets201         =genTop->at(0).NcJets20(1);
+     NcJets251         =genTop->at(0).NcJets25(1);
+     NcJets301         =genTop->at(0).NcJets30(1);
+     NcJets401         =genTop->at(0).NcJets40(1);
+     NbJets           =genTop->at(0).NbJets(0);
+     NbJets20         =genTop->at(0).NbJets20(0);
+     NbJets25         =genTop->at(0).NbJets25(0);
+     NbJets30         =genTop->at(0).NbJets30(0);
+     NbJets40         =genTop->at(0).NbJets40(0);
+     NaddbJets        =genTop->at(0).NaddbJets(0);
+     NaddbJets20      =genTop->at(0).NaddbJets20(0);
+     NaddbJets40      =genTop->at(0).NaddbJets40(0);
+     NcJets           =genTop->at(0).NcJets(0);
+     NcJets10         =genTop->at(0).NcJets10(0);
+     NcJets15         =genTop->at(0).NcJets15(0);
+     NcJets20         =genTop->at(0).NcJets20(0);
+     NcJets25         =genTop->at(0).NcJets25(0);
+     NcJets30         =genTop->at(0).NcJets30(0);
+     NcJets40         =genTop->at(0).NcJets40(0);
+     NJets            =genTop->at(0).NJets();
+     NJets10          =genTop->at(0).NJets10();
+     NJets20          =genTop->at(0).NJets20();
+     NJets25          =genTop->at(0).NJets25();
+     NJets30          =genTop->at(0).NJets30();
+     NJets40          =genTop->at(0).NJets40();
+     NaddJets20       =genTop->at(0).NaddJets20();
+     NaddJets40       =genTop->at(0).NaddJets40();
+     NbQuarksTop      =genTop->at(0).NbQuarksTop();
+     NbQuarksNoTop    =genTop->at(0).NbQuarksNoTop();
+     NbQuarks         =genTop->at(0).NbQuarks();
+     NbQuarks20       =genTop->at(0).NbQuarks20();
+     NbQuarks40       =genTop->at(0).NbQuarks40();
+     NaddbQuarks20    =genTop->at(0).NaddbQuarks20();
+     NaddbQuarks40    =genTop->at(0).NaddbQuarks40();
+     NcQuarks         =genTop->at(0).NcQuarks();
+//    }
+  }
+////////////
   if ( iEvent.getByToken(partonTop_channel_, partonTop_channel)){
     edm::Handle<vector<int> > partonTop_modes;
     edm::Handle<reco::GenParticleCollection> partonTop_genParticles;
@@ -751,20 +1019,20 @@ void TtbarBbbarDiLeptonAnalyzer::analyze(const edm::Event& iEvent, const edm::Ev
     b_jets_bDiscriminatorCSV.push_back(bDisCSV);
 
     if (runOnMC_) {
-      Jet::JETFLAV fla = Jet::JETFLAV_LIGHT;
-      if (abs(flavor)==4){ fla=Jet::JETFLAV_C; }
-      if (abs(flavor)==5){ fla=Jet::JETFLAV_B; }
-      b_csvl_sf = b_csvl_sf*(jet1->scaleFactorCSVv2(Jet::BTAGCSV_LOOSE,0,fla));
-      b_csvl_sfup = b_csvl_sfup*(jet1->scaleFactorCSVv2(Jet::BTAGCSV_LOOSE,1,fla));
-      b_csvl_sfdw = b_csvl_sfdw*(jet1->scaleFactorCSVv2(Jet::BTAGCSV_LOOSE,-1,fla));
+      cat::Jet::JETFLAV fla = cat::Jet::JETFLAV_LIGHT;
+      if (abs(flavor)==4){ fla=cat::Jet::JETFLAV_C; }
+      if (abs(flavor)==5){ fla=cat::Jet::JETFLAV_B; }
+      b_csvl_sf = b_csvl_sf*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_LOOSE,0,fla));
+      b_csvl_sfup = b_csvl_sfup*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_LOOSE,1,fla));
+      b_csvl_sfdw = b_csvl_sfdw*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_LOOSE,-1,fla));
 
-      b_csvm_sf = b_csvm_sf*(jet1->scaleFactorCSVv2(Jet::BTAGCSV_MEDIUM,0,fla));
-      b_csvm_sfup = b_csvm_sfup*(jet1->scaleFactorCSVv2(Jet::BTAGCSV_MEDIUM,1,fla));
-      b_csvm_sfdw = b_csvm_sfdw*(jet1->scaleFactorCSVv2(Jet::BTAGCSV_MEDIUM,-1,fla));
+      b_csvm_sf = b_csvm_sf*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_MEDIUM,0,fla));
+      b_csvm_sfup = b_csvm_sfup*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_MEDIUM,1,fla));
+      b_csvm_sfdw = b_csvm_sfdw*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_MEDIUM,-1,fla));
 
-      b_csvt_sf = b_csvt_sf*(jet1->scaleFactorCSVv2(Jet::BTAGCSV_TIGHT,0,fla));
-      b_csvt_sfup = b_csvt_sfup*(jet1->scaleFactorCSVv2(Jet::BTAGCSV_TIGHT,1,fla));
-      b_csvt_sfdw = b_csvt_sfdw*(jet1->scaleFactorCSVv2(Jet::BTAGCSV_TIGHT,-1,fla));
+      b_csvt_sf = b_csvt_sf*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_TIGHT,0,fla));
+      b_csvt_sfup = b_csvt_sfup*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_TIGHT,1,fla));
+      b_csvt_sfdw = b_csvt_sfdw*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_TIGHT,-1,fla));
     }
   }
   
