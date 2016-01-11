@@ -1151,6 +1151,8 @@ void TtbarBbbarDiLeptonAnalyzer::selectElecs(const cat::ElectronCollection& elec
     //if ( !el.electronID("cutBasedElectronID-Spring15-25ns-V1-standalone-medium") ) continue;
     //if (!el.passConversionVeto()) continue;
     //if (!el.isPF()) continue;
+    if (el.relIso(0.3) > 0.12) continue;
+
 
     //printf("electron with pt %4.1f\n", el.pt());
     selelecs.push_back(el);
