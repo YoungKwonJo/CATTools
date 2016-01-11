@@ -64,8 +64,9 @@ process.filterTrigMUEL = cms.EDFilter("CATTriggerBitCombiner",
 
 process.filterTrigELEL = process.filterTrigMUEL.clone(
     triggersToMatch = cms.vstring(
-        "HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_v",
-        "HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v",
+#        "HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_v",
+#        "HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v",
+"HLT_Ele17_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v"
     ),
 )
 
@@ -73,9 +74,11 @@ process.filterTrigMUMU = process.filterTrigMUEL.clone(
     triggersToMatch = cms.vstring(
 #      "HLT_Mu17_Mu8_DZ_v",
 #      "HLT_Mu17_TkMu8_DZ_v",
-      "HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_v",
-      "HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_v",
-      "HLT_Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL_v",
+#      "HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_v",
+#      "HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_v",
+#      "HLT_Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL_v",
+"HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_v",
+"HLT_Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL_DZ_v"
     ),
 )
 

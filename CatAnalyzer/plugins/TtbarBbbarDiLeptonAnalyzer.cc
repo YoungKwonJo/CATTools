@@ -47,6 +47,13 @@ public:
   enum {
     CH_NONE=0, CH_MUEL=1, CH_ELEL=2, CH_MUMU=3
   };
+  enum sys_e {sys_nom,  sys_jes_u, sys_jes_d, sys_jer_u, sys_jer_d,
+//    sys_mu_u, sys_mu_d, sys_el_u, sys_el_d,
+//    sys_mueff_u, sys_mueff_d, sys_eleff_u, sys_eleff_d,
+//    sys_btag_u, sys_btag_d,
+    nsys_e
+  };
+
 
 private:
   virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
@@ -55,14 +62,18 @@ private:
 
   void selectMuons(const cat::MuonCollection& muons, LeptonCollection& selmuons) const;
   void selectElecs(const cat::ElectronCollection& elecs, LeptonCollection& selelecs) const;
-  cat::JetCollection selectJets(const cat::JetCollection& jets, const LeptonCollection& recolep) const;
+//  cat::JetCollection selectJets(const cat::JetCollection& jets, const LeptonCollection& recolep) const;
+  cat::JetCollection selectJets(const cat::JetCollection& jets, const LeptonCollection& recolep, TtbarBbbarDiLeptonAnalyzer::sys_e sys) const;
   cat::JetCollection selectBJets(const cat::JetCollection& jets, double workingpoint) const;
   const reco::Candidate* getLast(const reco::Candidate* p) const;
   const bool isLastP( const reco::GenParticle& p) const;
   float MuonSF(float pt, float eta);
   float ElectronSF(float pt, float eta); // WP90
-
   void book(TTree* tree);
+
+void resetBr();
+void resetBrGEN();
+void resetBrJets();
 
   edm::EDGetTokenT<int> recoFiltersToken_, nGoodVertexToken_, lumiSelectionToken_;
   edm::EDGetTokenT<float> genweightToken_, puweightToken_, puweightUpToken_, puweightDownToken_, genweightQToken_;
@@ -88,6 +99,7 @@ private:
   edm::EDGetTokenT<reco::GenParticleCollection> partonTop_genParticles_, pseudoTop_;
 
   TTree * ttree_, * ttree2_;
+  TTree * ttree3_, * ttree4_,* ttree5_,* ttree6_;
   int b_nvertex, b_step, b_channel;
   bool b_step1, b_step2, b_step3, b_step4, b_step5, b_step6, b_tri, b_filtered;
   float b_met, b_metphi;
@@ -298,8 +310,17 @@ TtbarBbbarDiLeptonAnalyzer::TtbarBbbarDiLeptonAnalyzer(const edm::ParameterSet& 
   ttree_ = fs->make<TTree>("nom", "nom");
   ttree2_ = fs->make<TTree>("nom2", "nom2");
 
+  ttree3_ = fs->make<TTree>("nomJES_up", "nom2");
+  ttree4_ = fs->make<TTree>("nomJES_dw", "nom2");
+  ttree5_ = fs->make<TTree>("nomJER_up", "nom2");
+  ttree6_ = fs->make<TTree>("nomJER_dw", "nom2");
+
   book(ttree_);
   book(ttree2_);
+  book(ttree3_);
+  book(ttree4_);
+  book(ttree5_);
+  book(ttree6_);
 
   for (int i = 0; i < NCutflow; i++) cutflow_.push_back({0,0,0,0});
 }
@@ -522,136 +543,8 @@ void TtbarBbbarDiLeptonAnalyzer::beginLuminosityBlock(const edm::LuminosityBlock
 void TtbarBbbarDiLeptonAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   runOnMC_ = !iEvent.isRealData();
-
-  b_nvertex = 0;b_step = -1;b_channel = 0;
-  b_njet30 = 0; b_nbjetL30=0, b_nbjetM30 = 0; b_nbjetT30 = 0;
-  b_step1 = 0;b_step2 = 0;b_step3 = 0;b_step4 = 0;b_step5 = 0;b_step6 = 0;b_tri = 0;b_filtered = 0;
-  b_met = -9; b_metphi = -9;
-  b_weight = 1; b_weightQ = 1; b_puweight = 1; b_puweightUp = 1; b_puweightDown =1;
-  b_lepweight = 1;
-  b_pdfWeights.clear();
-
-  b_genTtbarId=0; b_genTtbarId30=0; b_genTtbarId40=0;
-  b_NgenJet=0; b_NgenJet30=0; b_NgenJet40=0; 
- 
-  b_lep1_pt = -9;b_lep1_eta = -9;b_lep1_phi = -9; b_lep1_RelIso = -9; b_lep1_q=0;
-  b_lep2_pt = -9;b_lep2_eta = -9;b_lep2_phi = -9; b_lep2_RelIso = -9; b_lep2_q=0;
-  b_ll_pt = -9;b_ll_eta = -9;b_ll_phi = -9;b_ll_m = -9;
-
-  b_partonChannel = -1; b_partonMode1 = -1; b_partonMode2 = -1;
-  b_partonlep1_pt = -9; b_partonlep1_eta = -9;
-  b_partonlep2_pt = -9; b_partonlep2_eta = -9;
-  b_partonInPhase = 0; b_partonInPhaseLep = false; b_partonInPhaseJet = false;
-  b_pseudoTopChannel = -1;
-  b_pseudoToplep1_pt = -9; b_pseudoToplep1_eta = -9;
-  b_pseudoToplep2_pt = -9; b_pseudoToplep2_eta = -9;
-  b_pseudoInPhase = false;
-
-  b_jets_pt.clear();
-  b_jets_eta.clear();                 
-  b_jets_phi.clear();
-  b_jets_flavor.clear();
-  b_jets_bDiscriminatorCSV.clear();
-  b_csvd_jetid.clear();
-
-  b_csvweight = 1;
-  b_csvweight_JES_Up = 1;
-  b_csvweight_JES_Down = 1;
-  b_csvweight_LF_Up = 1;
-  b_csvweight_LF_Down = 1;
-  b_csvweight_HF_Up = 1;
-  b_csvweight_HF_Down = 1;
-  b_csvweight_HF_Stats1_Up = 1;
-  b_csvweight_HF_Stats1_Down = 1;
-  b_csvweight_HF_Stats2_Up = 1;
-  b_csvweight_HF_Stats2_Down = 1;
-  b_csvweight_LF_Stats1_Up = 1;
-  b_csvweight_LF_Stats1_Down = 1;
-  b_csvweight_LF_Stats2_Up = 1;
-  b_csvweight_LF_Stats2_Down = 1;
-  b_csvweight_Charm_Err1_Up = 1;
-  b_csvweight_Charm_Err1_Down = 1;
-  b_csvweight_Charm_Err2_Up = 1;
-  b_csvweight_Charm_Err2_Down = 1;
-
-
-  b_csvl_sf = 1;  b_csvl_sfup = 1;  b_csvl_sfdw = 1;
-  b_csvm_sf = 1;  b_csvm_sfup = 1;  b_csvm_sfdw = 1;
-  b_csvt_sf = 1;  b_csvt_sfup = 1;  b_csvt_sfdw = 1;
-//////////////////////
-   lepton1_pt  =0.0      ;//  cms.string("lepton1().Pt()"),
-   lepton1_eta =-9.0     ;//  cms.string("lepton1().Eta()"),
-   lepton1_phi =-9.0     ;//  cms.string("lepton1().Phi()"),
-   lepton2_pt  =0.0      ;//  cms.string("lepton2().Pt()"),
-   lepton2_eta =-9.0     ;//  cms.string("lepton2().Eta()"),
-   lepton2_phi =-9.0     ;//  cms.string("lepton2().Phi()"),
-
-   allHadronic      =false;//  cms.string("allHadronic"),
-   semiLeptonic     =false;//  cms.string("semiLeptonic"),
-   diLeptonicMuoMuo =false;//  cms.string("diLeptonicMuoMuo"),
-   diLeptonicMuoEle =false;//  cms.string("diLeptonicMuoEle"),
-   diLeptonicEleEle =false;//  cms.string("diLeptonicEleEle"),
-   diLeptonicTauMuo =false;//  cms.string("diLeptonicTauMuo"),
-   diLeptonicTauEle =false;//  cms.string("diLeptonicTauEle"),
-   diLeptonicTauTau =false;//  cms.string("diLeptonicTauTau"),
-
-   NbJets1           =0;//  cms.string("NbJets(1)"),
-   NbJets201         =0;//  cms.string("NbJets20(1)"),
-   NbJets251         =0;//  cms.string("NbJets25(1)"),
-   NbJets301         =0;//  cms.string("NbJets30(1)"),
-   NbJets401         =0;//  cms.string("NbJets40(1)"),
-   NaddbJets1        =0;//  cms.string("NaddbJets(1)"),
-   NaddbJets201      =0;//  cms.string("NaddbJets20(1)"),
-   NaddbJets401      =0;//  cms.string("NaddbJets40(1)"),
-   NcJets1           =0;//  cms.string("NcJets(1)"),
-   NcJets101         =0;//  cms.string("NcJets10(1)"),
-   NcJets151         =0;//  cms.string("NcJets15(1)"),
-   NcJets201         =0;//  cms.string("NcJets20(1)"),
-   NcJets251         =0;//  cms.string("NcJets25(1)"),
-   NcJets301         =0;//  cms.string("NcJets30(1)"),
-   NcJets401         =0;//  cms.string("NcJets40(1)"),
-   NbJets           =0;//  cms.string("NbJets(0)"),
-   NbJets20         =0;//  cms.string("NbJets20(0)"),
-   NbJets25         =0;//  cms.string("NbJets25(0)"),
-   NbJets30         =0;//  cms.string("NbJets30(0)"),
-   NbJets40         =0;//  cms.string("NbJets40(0)"),
-   NaddbJets        =0;//  cms.string("NaddbJets(0)"),
-   NaddbJets20      =0;//  cms.string("NaddbJets20(0)"),
-   NaddbJets40      =0;//  cms.string("NaddbJets40(0)"),
-   NcJets           =0;//  cms.string("NcJets(0)"),
-   NcJets10         =0;//  cms.string("NcJets10(0)"),
-   NcJets15         =0;//  cms.string("NcJets15(0)"),
-   NcJets20         =0;//  cms.string("NcJets20(0)"),
-   NcJets25         =0;//  cms.string("NcJets25(0)"),
-   NcJets30         =0;//  cms.string("NcJets30(0)"),
-   NcJets40         =0;//  cms.string("NcJets40(0)"),
-   NJets            =0;//  cms.string("NJets"),
-   NJets10          =0;//  cms.string("NJets10"),
-   NJets20          =0;//  cms.string("NJets20"),
-   NJets25          =0;//  cms.string("NJets25"),
-   NJets30          =0;//  cms.string("NJets30"),
-   NJets40          =0;//  cms.string("NJets40"),
-   NaddJets20       =0;//  cms.string("NaddJets20"),
-   NaddJets40       =0;//  cms.string("NaddJets40"),
-   NbQuarksTop      =0;//  cms.string("NbQuarksTop"),
-   NbQuarksNoTop    =0;//  cms.string("NbQuarksNoTop"),
-   NbQuarks         =0;//  cms.string("NbQuarks"),
-   NbQuarks20       =0;//  cms.string("NbQuarks20"),
-   NbQuarks40       =0;//  cms.string("NbQuarks40"),
-   NaddbQuarks20    =0;//  cms.string("NaddbQuarks20"),
-   NaddbQuarks40    =0;//  cms.string("NaddbQuarks40"),
-   NcQuarks         =0;//  cms.string("NcQuarks"),
-
-
-/*  
-  b_jet1_pt = -9; b_jet1_eta = -9; b_jet1_CSVInclV2 = -9;
-  b_jet2_pt = -9; b_jet2_eta = -9; b_jet2_CSVInclV2 = -9;
-  b_top1_pt = -9; b_top1_eta = -9; b_top1_phi = -9; b_top1_rapi = -9;
-  b_top2_pt = -9; b_top2_eta = -9; b_top2_phi = -9; b_top2_rapi = -9;
-  b_ttbar_pt = -9; b_ttbar_eta = -9; b_ttbar_phi = -9; b_ttbar_m = -9; b_ttbar_rapi = -9;
-*/
-  b_is3lep = -9;
-
+  resetBr();
+////
   cutflow_[0][b_channel]++;
  
  
@@ -988,7 +881,12 @@ void TtbarBbbarDiLeptonAnalyzer::analyze(const edm::Event& iEvent, const edm::Ev
   const auto tlv_ll = recolep1.p4()+recolep2.p4();
   b_ll_pt = tlv_ll.Pt(); b_ll_eta = tlv_ll.Eta(); b_ll_phi = tlv_ll.Phi(); b_ll_m = tlv_ll.M();
 
-  if (b_ll_m > 20. && recolep1.charge() * recolep2.charge() < 0) b_step1 = true;
+  //if (b_ll_m > 20. && recolep1.charge() * recolep2.charge() < 0){
+  if (b_ll_m < 20. || recolep1.charge() * recolep2.charge() > 0){
+    ttree_->Fill();
+    return;
+  }
+  b_step1 = true;
   b_step = 1;
   cutflow_[4][b_channel]++;
 
@@ -998,113 +896,118 @@ void TtbarBbbarDiLeptonAnalyzer::analyze(const edm::Event& iEvent, const edm::Ev
     cutflow_[5][b_channel]++;
   }
 
-  //JetCollection&& selectedJets = selectJets(*jets, recolep);
-  JetCollection&& selectedJets = selectJets(*jets, recolep);
-  JetCollection&& selectedBJetsL = selectBJets(selectedJets,0.605);
-  JetCollection&& selectedBJetsM = selectBJets(selectedJets,0.890);
-  JetCollection&& selectedBJetsT = selectBJets(selectedJets,0.970);
+  for (int sys = 0; sys < 5; ++sys){
+    if (sys > 2 && !runOnMC_) break;
+    if(sys>0 && (b_step3==false || b_step2==false || b_step1==false) ) break;
 
-  int idx=0;
-  std::map<int,float> mapJetBDiscriminator;
-  for (auto jet1 = selectedJets.begin(), end = selectedJets.end(); jet1 != end; ++jet1){
-    float bDisCSV= (float) jet1->bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags");
-    int flavor = jet1->partonFlavour();
-    mapJetBDiscriminator[idx] = bDisCSV;
-    idx++;
-    //b_jets_pt.push_back(jet1->p4().pt()*jet1->smearedRes());
-    b_jets_pt.push_back(jet1->p4().pt());
-    b_jets_eta.push_back(jet1->p4().eta());
-    b_jets_phi.push_back(jet1->p4().phi());
-    b_jets_flavor.push_back(flavor);
-    b_jets_bDiscriminatorCSV.push_back(bDisCSV);
-
-    if (runOnMC_) {
-      cat::Jet::JETFLAV fla = cat::Jet::JETFLAV_LIGHT;
-      if (abs(flavor)==4){ fla=cat::Jet::JETFLAV_C; }
-      if (abs(flavor)==5){ fla=cat::Jet::JETFLAV_B; }
-      b_csvl_sf = b_csvl_sf*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_LOOSE,0,fla));
-      b_csvl_sfup = b_csvl_sfup*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_LOOSE,1,fla));
-      b_csvl_sfdw = b_csvl_sfdw*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_LOOSE,-1,fla));
-
-      b_csvm_sf = b_csvm_sf*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_MEDIUM,0,fla));
-      b_csvm_sfup = b_csvm_sfup*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_MEDIUM,1,fla));
-      b_csvm_sfdw = b_csvm_sfdw*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_MEDIUM,-1,fla));
-
-      b_csvt_sf = b_csvt_sf*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_TIGHT,0,fla));
-      b_csvt_sfup = b_csvt_sfup*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_TIGHT,1,fla));
-      b_csvt_sfdw = b_csvt_sfdw*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_TIGHT,-1,fla));
+    //JetCollection&& selectedJets = selectJets(*jets, recolep);
+    JetCollection&& selectedJets = selectJets(*jets, recolep, (sys_e)sys);
+    JetCollection&& selectedBJetsL = selectBJets(selectedJets,0.605);
+    JetCollection&& selectedBJetsM = selectBJets(selectedJets,0.890);
+    JetCollection&& selectedBJetsT = selectBJets(selectedJets,0.970);
+    
+    int idx=0;
+    std::map<int,float> mapJetBDiscriminator;
+    for (auto jet1 = selectedJets.begin(), end = selectedJets.end(); jet1 != end; ++jet1){
+      float bDisCSV= (float) jet1->bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags");
+      //float bDisCSV= (float) jet1->bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTagsAK4PFPuppi");
+      int flavor = jet1->partonFlavour();
+      mapJetBDiscriminator[idx] = bDisCSV;
+      idx++;
+      //b_jets_pt.push_back(jet1->p4().pt()*jet1->smearedRes());
+      b_jets_pt.push_back(jet1->p4().pt());
+      b_jets_eta.push_back(jet1->p4().eta());
+      b_jets_phi.push_back(jet1->p4().phi());
+      b_jets_flavor.push_back(flavor);
+      b_jets_bDiscriminatorCSV.push_back(bDisCSV);
+    
+      if (runOnMC_) {
+        cat::Jet::JETFLAV fla = cat::Jet::JETFLAV_LIGHT;
+        if (abs(flavor)==4){ fla=cat::Jet::JETFLAV_C; }
+        if (abs(flavor)==5){ fla=cat::Jet::JETFLAV_B; }
+        b_csvl_sf = b_csvl_sf*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_LOOSE,0,fla));
+        b_csvl_sfup = b_csvl_sfup*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_LOOSE,1,fla));
+        b_csvl_sfdw = b_csvl_sfdw*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_LOOSE,-1,fla));
+    
+        b_csvm_sf = b_csvm_sf*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_MEDIUM,0,fla));
+        b_csvm_sfup = b_csvm_sfup*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_MEDIUM,1,fla));
+        b_csvm_sfdw = b_csvm_sfdw*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_MEDIUM,-1,fla));
+    
+        b_csvt_sf = b_csvt_sf*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_TIGHT,0,fla));
+        b_csvt_sfup = b_csvt_sfup*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_TIGHT,1,fla));
+        b_csvt_sfdw = b_csvt_sfdw*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_TIGHT,-1,fla));
+      }
     }
-  }
-  
- if (runOnMC_){
-     //double csvWgtHF, csvWgtLF, csvWgtCF;
-     b_csvweight         = csvWeight->getCSVWeight(selectedJets, 0);//); 
-     b_csvweight_JES_Up  = csvWeight->getCSVWeight(selectedJets, 7);
-     b_csvweight_JES_Down= csvWeight->getCSVWeight(selectedJets, 8);
-     b_csvweight_LF_Up   = csvWeight->getCSVWeight(selectedJets, 9);
-     b_csvweight_LF_Down = csvWeight->getCSVWeight(selectedJets, 10);
-     b_csvweight_HF_Up   = csvWeight->getCSVWeight(selectedJets, 11);
-     b_csvweight_HF_Down = csvWeight->getCSVWeight(selectedJets, 12);
-     b_csvweight_HF_Stats1_Up  = csvWeight->getCSVWeight(selectedJets, 13);
-     b_csvweight_HF_Stats1_Down= csvWeight->getCSVWeight(selectedJets, 14);
-     b_csvweight_HF_Stats2_Up  = csvWeight->getCSVWeight(selectedJets, 15);
-     b_csvweight_HF_Stats2_Down= csvWeight->getCSVWeight(selectedJets, 16);
-     b_csvweight_LF_Stats1_Up  = csvWeight->getCSVWeight(selectedJets, 17);
-     b_csvweight_LF_Stats1_Down= csvWeight->getCSVWeight(selectedJets, 18);
-     b_csvweight_LF_Stats2_Up  = csvWeight->getCSVWeight(selectedJets, 19);
-     b_csvweight_LF_Stats2_Down= csvWeight->getCSVWeight(selectedJets, 20);
-     b_csvweight_Charm_Err1_Up = csvWeight->getCSVWeight(selectedJets, 21);
-     b_csvweight_Charm_Err1_Down= csvWeight->getCSVWeight(selectedJets, 22);
-     b_csvweight_Charm_Err2_Up  = csvWeight->getCSVWeight(selectedJets, 23);
-     b_csvweight_Charm_Err2_Down= csvWeight->getCSVWeight(selectedJets, 24);
-
-  }
-  //csvd order
-  std::vector< std::pair<int,float> > vecJetBDisc(mapJetBDiscriminator.begin(), mapJetBDiscriminator.end());
-  std::sort(vecJetBDisc.begin(), vecJetBDisc.end(), bigger_second<data_t>());
-  for(std::vector< std::pair<int,float> >::iterator it = vecJetBDisc.begin() ; it != vecJetBDisc.end(); ++it)
-      b_csvd_jetid.push_back((*it).first);
-
-  const auto met = mets->front().p4();
-  b_met = met.pt();
-  b_metphi = met.phi();
-  b_njet30 = selectedJets.size();
-  b_nbjetL30 = selectedBJetsL.size();
-  b_nbjetM30 = selectedBJetsM.size();
-  b_nbjetT30 = selectedBJetsT.size();
-
-  if ((b_channel == CH_MUEL) || (b_met > 40.)){
-    b_step3 = true;
-    if (b_step == 2){
-      ++b_step;
-      cutflow_[6][b_channel]++;
+    
+    if (runOnMC_){
+        //double csvWgtHF, csvWgtLF, csvWgtCF;
+        b_csvweight         = csvWeight->getCSVWeight(selectedJets, 0);//); 
+        b_csvweight_JES_Up  = csvWeight->getCSVWeight(selectedJets, 7);
+        b_csvweight_JES_Down= csvWeight->getCSVWeight(selectedJets, 8);
+        b_csvweight_LF_Up   = csvWeight->getCSVWeight(selectedJets, 9);
+        b_csvweight_LF_Down = csvWeight->getCSVWeight(selectedJets, 10);
+        b_csvweight_HF_Up   = csvWeight->getCSVWeight(selectedJets, 11);
+        b_csvweight_HF_Down = csvWeight->getCSVWeight(selectedJets, 12);
+        b_csvweight_HF_Stats1_Up  = csvWeight->getCSVWeight(selectedJets, 13);
+        b_csvweight_HF_Stats1_Down= csvWeight->getCSVWeight(selectedJets, 14);
+        b_csvweight_HF_Stats2_Up  = csvWeight->getCSVWeight(selectedJets, 15);
+        b_csvweight_HF_Stats2_Down= csvWeight->getCSVWeight(selectedJets, 16);
+        b_csvweight_LF_Stats1_Up  = csvWeight->getCSVWeight(selectedJets, 17);
+        b_csvweight_LF_Stats1_Down= csvWeight->getCSVWeight(selectedJets, 18);
+        b_csvweight_LF_Stats2_Up  = csvWeight->getCSVWeight(selectedJets, 19);
+        b_csvweight_LF_Stats2_Down= csvWeight->getCSVWeight(selectedJets, 20);
+        b_csvweight_Charm_Err1_Up = csvWeight->getCSVWeight(selectedJets, 21);
+        b_csvweight_Charm_Err1_Down= csvWeight->getCSVWeight(selectedJets, 22);
+        b_csvweight_Charm_Err2_Up  = csvWeight->getCSVWeight(selectedJets, 23);
+        b_csvweight_Charm_Err2_Down= csvWeight->getCSVWeight(selectedJets, 24);
+   
     }
-  }
- 
-  if (selectedJets.size() >3 ){
-    b_step4 = true;
-    if (b_step == 3){
-      ++b_step;
-      cutflow_[7][b_channel]++;
+    //csvd order
+    std::vector< std::pair<int,float> > vecJetBDisc(mapJetBDiscriminator.begin(), mapJetBDiscriminator.end());
+    std::sort(vecJetBDisc.begin(), vecJetBDisc.end(), bigger_second<data_t>());
+    for(std::vector< std::pair<int,float> >::iterator it = vecJetBDisc.begin() ; it != vecJetBDisc.end(); ++it)
+        b_csvd_jetid.push_back((*it).first);
+    
+    const auto met = mets->front().p4();
+    b_met = met.pt();
+    b_metphi = met.phi();
+    b_njet30 = selectedJets.size();
+    b_nbjetL30 = selectedBJetsL.size();
+    b_nbjetM30 = selectedBJetsM.size();
+    b_nbjetT30 = selectedBJetsT.size();
+    
+    if ((b_channel == CH_MUEL) || (b_met > 40.)){
+      b_step3 = true;
+      if (b_step == 2){
+        ++b_step;
+        cutflow_[6][b_channel]++;
+      }
     }
-  }
-
- 
-  if (selectedBJetsM.size() > 1){
-    b_step5 = true;
-    if (b_step == 4){
-      ++b_step;
-      cutflow_[8][b_channel]++;
+   
+    if (selectedJets.size() >3 ){
+      b_step4 = true;
+      if (b_step == 3){
+        ++b_step;
+        cutflow_[7][b_channel]++;
+      }
     }
-  }
-
-  if (selectedBJetsT.size() > 1){
-    b_step6 = true;
-    if (b_step == 5){
-      ++b_step;
-      cutflow_[9][b_channel]++;
+    
+   
+    if (selectedBJetsM.size() > 1){
+      b_step5 = true;
+      if (b_step == 4){
+        ++b_step;
+        cutflow_[8][b_channel]++;
+      }
     }
-  }
+    
+    if (selectedBJetsT.size() > 1){
+      b_step6 = true;
+      if (b_step == 5){
+        ++b_step;
+        cutflow_[9][b_channel]++;
+      }
+    }
 
 
 /*  ////////////////////////////////////////////////////////  KIN  /////////////////////////////////////
@@ -1185,8 +1088,15 @@ void TtbarBbbarDiLeptonAnalyzer::analyze(const edm::Event& iEvent, const edm::Ev
 */
   //  printf("maxweight %f, top1.M() %f, top2.M() %f \n",maxweight, top1.M(), top2.M() );
   // printf("%2d, %2d, %2d, %2d, %6.2f, %6.2f, %6.2f\n", b_njet, b_nbjet, b_step, b_channel, b_met, b_ll_mass, b_maxweight);
-  ttree_->Fill();
-  ttree2_->Fill(); 
+    if(sys==0){
+      ttree_->Fill();
+      ttree2_->Fill(); 
+    }else if (sys==1) ttree3_->Fill();
+    else if (sys==2) ttree4_->Fill();
+    else if (sys==3) ttree5_->Fill();
+    else if (sys==4) ttree6_->Fill();
+
+  }
 }
 const bool TtbarBbbarDiLeptonAnalyzer::isLastP( const reco::GenParticle& p) const
 {
@@ -1223,7 +1133,7 @@ void TtbarBbbarDiLeptonAnalyzer::selectMuons(const cat::MuonCollection& muons, L
     if (std::abs(mu.eta()) > 2.4) continue;
     //if (!mu.isMediumMuon()) continue;
     if (!mu.isTightMuon()) continue;
-    //if (mu.relIso(0.4) > 0.15) continue;
+    if (mu.relIso(0.4) > 0.15) continue;
     //printf("muon with pt %4.1f, POG loose id %d, tight id %d\n", mu.pt(), mu.isLooseMuon(), mu.isTightMuon());
     selmuons.push_back(mu);
   }
@@ -1248,8 +1158,9 @@ void TtbarBbbarDiLeptonAnalyzer::selectElecs(const cat::ElectronCollection& elec
 }
 
 
-cat::JetCollection TtbarBbbarDiLeptonAnalyzer::selectJets(const cat::JetCollection& jets, const LeptonCollection& recolep) const
+cat::JetCollection TtbarBbbarDiLeptonAnalyzer::selectJets(const cat::JetCollection& jets, const LeptonCollection& recolep, sys_e sys) const
 {
+/*
   cat::JetCollection seljets;
   for (auto& jet : jets) {
     //if (jet.pt()*jet.smearedRes() < 30.) continue;
@@ -1266,6 +1177,32 @@ cat::JetCollection TtbarBbbarDiLeptonAnalyzer::selectJets(const cat::JetCollecti
     seljets.push_back(jet);
   }
   return seljets;
+*/
+  cat::JetCollection seljets;
+  for (auto& j : jets) {
+    cat::Jet jet(j);
+    if (sys == sys_jes_u) jet.setP4(j.p4() * j.shiftedEnUp());
+    if (sys == sys_jes_d) jet.setP4(j.p4() * j.shiftedEnDown());
+    if (sys == sys_jer_u) jet.setP4(j.p4() * j.smearedResUp());
+    if (sys == sys_jer_d) jet.setP4(j.p4() * j.smearedResDown());
+
+    if (jet.pt() < 30.) continue;
+    if (std::abs(jet.eta()) > 2.4)  continue;
+    if (!jet.LooseId()) continue;
+
+    bool hasOverLap = false;
+    for (auto lep : recolep){
+      if (deltaR(jet.p4(),lep.p4()) < 0.4) hasOverLap = true;
+    }
+    if (hasOverLap) continue;
+    // printf("jet with pt %4.1f\n", jet.pt());
+    //if (sys == sys_btag_u) b_btagweight *= jet.scaleFactorCSVv2(cat::Jet::BTAGCSV_LOOSE, 1);
+    //else if (sys == sys_btag_d) b_btagweight *= jet.scaleFactorCSVv2(cat::Jet::BTAGCSV_LOOSE, -1);
+    //else b_btagweight *= jet.scaleFactorCSVv2(cat::Jet::BTAGCSV_LOOSE, 0);
+    
+	seljets.push_back(jet);
+  }
+  return seljets;
 }
 
 cat::JetCollection TtbarBbbarDiLeptonAnalyzer::selectBJets(const JetCollection& jets, double workingpoint) const
@@ -1275,10 +1212,162 @@ cat::JetCollection TtbarBbbarDiLeptonAnalyzer::selectBJets(const JetCollection& 
   cat::JetCollection selBjets;
   for (auto& jet : jets) {
     if (jet.bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags") < workingpoint) continue;
+    //if (jet.bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTagsAK4PFPuppi") < workingpoint) continue;
     //printf("b jet with pt %4.1f\n", jet.pt());
     selBjets.push_back(jet);
   }
   return selBjets;
+}
+void TtbarBbbarDiLeptonAnalyzer::resetBr()
+{
+
+  b_nvertex = 0;b_step = -1;b_channel = 0;
+  b_njet30 = 0; b_nbjetL30=0, b_nbjetM30 = 0; b_nbjetT30 = 0;
+  b_step1 = 0;b_step2 = 0;b_step3 = 0;b_step4 = 0;b_step5 = 0;b_step6 = 0;b_tri = 0;b_filtered = 0;
+  b_met = -9; b_metphi = -9;
+
+  b_weight = 1; b_weightQ = 1; b_puweight = 1; b_puweightUp = 1; b_puweightDown =1;
+  b_lepweight = 1;
+  b_pdfWeights.clear();
+
+///////
+  b_lep1_pt = -9;b_lep1_eta = -9;b_lep1_phi = -9; b_lep1_RelIso = -9; b_lep1_q=0;
+  b_lep2_pt = -9;b_lep2_eta = -9;b_lep2_phi = -9; b_lep2_RelIso = -9; b_lep2_q=0;
+  b_ll_pt = -9;b_ll_eta = -9;b_ll_phi = -9;b_ll_m = -9;
+  resetBrJets();
+  resetBrGEN();
+//////
+}
+void TtbarBbbarDiLeptonAnalyzer::resetBrJets()
+{
+
+  b_jets_pt.clear();
+  b_jets_eta.clear();                 
+  b_jets_phi.clear();
+  b_jets_flavor.clear();
+  b_jets_bDiscriminatorCSV.clear();
+  b_csvd_jetid.clear();
+
+  b_csvweight = 1;
+  b_csvweight_JES_Up = 1;
+  b_csvweight_JES_Down = 1;
+  b_csvweight_LF_Up = 1;
+  b_csvweight_LF_Down = 1;
+  b_csvweight_HF_Up = 1;
+  b_csvweight_HF_Down = 1;
+  b_csvweight_HF_Stats1_Up = 1;
+  b_csvweight_HF_Stats1_Down = 1;
+  b_csvweight_HF_Stats2_Up = 1;
+  b_csvweight_HF_Stats2_Down = 1;
+  b_csvweight_LF_Stats1_Up = 1;
+  b_csvweight_LF_Stats1_Down = 1;
+  b_csvweight_LF_Stats2_Up = 1;
+  b_csvweight_LF_Stats2_Down = 1;
+  b_csvweight_Charm_Err1_Up = 1;
+  b_csvweight_Charm_Err1_Down = 1;
+  b_csvweight_Charm_Err2_Up = 1;
+  b_csvweight_Charm_Err2_Down = 1;
+
+
+  b_csvl_sf = 1;  b_csvl_sfup = 1;  b_csvl_sfdw = 1;
+  b_csvm_sf = 1;  b_csvm_sfup = 1;  b_csvm_sfdw = 1;
+  b_csvt_sf = 1;  b_csvt_sfup = 1;  b_csvt_sfdw = 1;
+//////////////////////
+//////////////////////
+//////////////////////
+//////////////////////
+//////////////////////
+//////////////////////
+}
+void TtbarBbbarDiLeptonAnalyzer::resetBrGEN()
+{
+  b_genTtbarId=0; b_genTtbarId30=0; b_genTtbarId40=0;
+  b_NgenJet=0; b_NgenJet30=0; b_NgenJet40=0; 
+ 
+  b_partonChannel = -1; b_partonMode1 = -1; b_partonMode2 = -1;
+  b_partonlep1_pt = -9; b_partonlep1_eta = -9;
+  b_partonlep2_pt = -9; b_partonlep2_eta = -9;
+  b_partonInPhase = 0; b_partonInPhaseLep = false; b_partonInPhaseJet = false;
+  b_pseudoTopChannel = -1;
+  b_pseudoToplep1_pt = -9; b_pseudoToplep1_eta = -9;
+  b_pseudoToplep2_pt = -9; b_pseudoToplep2_eta = -9;
+  b_pseudoInPhase = false;
+
+
+   lepton1_pt  =0.0      ;//  cms.string("lepton1().Pt()"),
+   lepton1_eta =-9.0     ;//  cms.string("lepton1().Eta()"),
+   lepton1_phi =-9.0     ;//  cms.string("lepton1().Phi()"),
+   lepton2_pt  =0.0      ;//  cms.string("lepton2().Pt()"),
+   lepton2_eta =-9.0     ;//  cms.string("lepton2().Eta()"),
+   lepton2_phi =-9.0     ;//  cms.string("lepton2().Phi()"),
+
+   allHadronic      =false;//  cms.string("allHadronic"),
+   semiLeptonic     =false;//  cms.string("semiLeptonic"),
+   diLeptonicMuoMuo =false;//  cms.string("diLeptonicMuoMuo"),
+   diLeptonicMuoEle =false;//  cms.string("diLeptonicMuoEle"),
+   diLeptonicEleEle =false;//  cms.string("diLeptonicEleEle"),
+   diLeptonicTauMuo =false;//  cms.string("diLeptonicTauMuo"),
+   diLeptonicTauEle =false;//  cms.string("diLeptonicTauEle"),
+   diLeptonicTauTau =false;//  cms.string("diLeptonicTauTau"),
+
+   NbJets1           =0;//  cms.string("NbJets(1)"),
+   NbJets201         =0;//  cms.string("NbJets20(1)"),
+   NbJets251         =0;//  cms.string("NbJets25(1)"),
+   NbJets301         =0;//  cms.string("NbJets30(1)"),
+   NbJets401         =0;//  cms.string("NbJets40(1)"),
+   NaddbJets1        =0;//  cms.string("NaddbJets(1)"),
+   NaddbJets201      =0;//  cms.string("NaddbJets20(1)"),
+   NaddbJets401      =0;//  cms.string("NaddbJets40(1)"),
+   NcJets1           =0;//  cms.string("NcJets(1)"),
+   NcJets101         =0;//  cms.string("NcJets10(1)"),
+   NcJets151         =0;//  cms.string("NcJets15(1)"),
+   NcJets201         =0;//  cms.string("NcJets20(1)"),
+   NcJets251         =0;//  cms.string("NcJets25(1)"),
+   NcJets301         =0;//  cms.string("NcJets30(1)"),
+   NcJets401         =0;//  cms.string("NcJets40(1)"),
+   NbJets           =0;//  cms.string("NbJets(0)"),
+   NbJets20         =0;//  cms.string("NbJets20(0)"),
+   NbJets25         =0;//  cms.string("NbJets25(0)"),
+   NbJets30         =0;//  cms.string("NbJets30(0)"),
+   NbJets40         =0;//  cms.string("NbJets40(0)"),
+   NaddbJets        =0;//  cms.string("NaddbJets(0)"),
+   NaddbJets20      =0;//  cms.string("NaddbJets20(0)"),
+   NaddbJets40      =0;//  cms.string("NaddbJets40(0)"),
+   NcJets           =0;//  cms.string("NcJets(0)"),
+   NcJets10         =0;//  cms.string("NcJets10(0)"),
+   NcJets15         =0;//  cms.string("NcJets15(0)"),
+   NcJets20         =0;//  cms.string("NcJets20(0)"),
+   NcJets25         =0;//  cms.string("NcJets25(0)"),
+   NcJets30         =0;//  cms.string("NcJets30(0)"),
+   NcJets40         =0;//  cms.string("NcJets40(0)"),
+   NJets            =0;//  cms.string("NJets"),
+   NJets10          =0;//  cms.string("NJets10"),
+   NJets20          =0;//  cms.string("NJets20"),
+   NJets25          =0;//  cms.string("NJets25"),
+   NJets30          =0;//  cms.string("NJets30"),
+   NJets40          =0;//  cms.string("NJets40"),
+   NaddJets20       =0;//  cms.string("NaddJets20"),
+   NaddJets40       =0;//  cms.string("NaddJets40"),
+   NbQuarksTop      =0;//  cms.string("NbQuarksTop"),
+   NbQuarksNoTop    =0;//  cms.string("NbQuarksNoTop"),
+   NbQuarks         =0;//  cms.string("NbQuarks"),
+   NbQuarks20       =0;//  cms.string("NbQuarks20"),
+   NbQuarks40       =0;//  cms.string("NbQuarks40"),
+   NaddbQuarks20    =0;//  cms.string("NaddbQuarks20"),
+   NaddbQuarks40    =0;//  cms.string("NaddbQuarks40"),
+   NcQuarks         =0;//  cms.string("NcQuarks"),
+
+
+/*  
+  b_jet1_pt = -9; b_jet1_eta = -9; b_jet1_CSVInclV2 = -9;
+  b_jet2_pt = -9; b_jet2_eta = -9; b_jet2_CSVInclV2 = -9;
+  b_top1_pt = -9; b_top1_eta = -9; b_top1_phi = -9; b_top1_rapi = -9;
+  b_top2_pt = -9; b_top2_eta = -9; b_top2_phi = -9; b_top2_rapi = -9;
+  b_ttbar_pt = -9; b_ttbar_eta = -9; b_ttbar_phi = -9; b_ttbar_m = -9; b_ttbar_rapi = -9;
+*/
+  b_is3lep = -9;
+
+
 }
 float TtbarBbbarDiLeptonAnalyzer::MuonSF(float pt, float eta)
 {
