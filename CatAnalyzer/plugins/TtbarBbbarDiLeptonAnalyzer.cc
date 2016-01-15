@@ -168,7 +168,15 @@ void resetBrJets();
   float  lepton2_phi      ;//  cms.string("lepton2().Phi()"),
 
   bool   allHadronic      ;//  cms.string("allHadronic"),
-  bool   semiLeptonic     ;//  cms.string("semiLeptonic"),
+
+  bool   semiLeptonicM1     ;//  cms.string("semiLeptonic"),
+  bool   semiLeptonic0     ;//  cms.string("semiLeptonic"),
+  bool   semiLeptonicP1     ;//  cms.string("semiLeptonic"),
+
+  bool   diLeptonicM1;
+  bool   diLeptonic0;
+  bool   diLeptonicP1;
+
   bool   diLeptonicMuoMuo ;//  cms.string("diLeptonicMuoMuo"),
   bool   diLeptonicMuoEle ;//  cms.string("diLeptonicMuoEle"),
   bool   diLeptonicEleEle ;//  cms.string("diLeptonicEleEle"),
@@ -441,7 +449,14 @@ void TtbarBbbarDiLeptonAnalyzer::book(TTree* tree){
    tree->Branch("lepton2_phi",   &lepton2_phi  , "lepton2_phi/F");
 
   tree->Branch("allHadronic",      &allHadronic        , "allHadronic/O");    
-  tree->Branch("semiLeptonic",     &semiLeptonic       , "semiLeptonic/O");     
+  tree->Branch("semiLeptonicM1",     &semiLeptonicM1       , "semiLeptonicM1/O");     
+  tree->Branch("semiLeptonic0",     &semiLeptonic0       , "semiLeptonic0/O");     
+  tree->Branch("semiLeptonicP1",     &semiLeptonicP1       , "semiLeptonicP1/O");     
+
+  tree->Branch("diLeptonicM1", &diLeptonicM1   , "diLeptonicM1/O");
+  tree->Branch("diLeptonic0", &diLeptonic0   , "diLeptonic0/O");
+  tree->Branch("diLeptonicP1", &diLeptonicP1   , "diLeptonicP1/O");
+ 
   tree->Branch("diLeptonicMuoMuo", &diLeptonicMuoMuo   , "diLeptonicMuoMuo/O"); 
   tree->Branch("diLeptonicMuoEle", &diLeptonicMuoEle   , "diLeptonicMuoEle/O"); 
   tree->Branch("diLeptonicEleEle", &diLeptonicEleEle   , "diLeptonicEleEle/O"); 
@@ -564,8 +579,15 @@ void TtbarBbbarDiLeptonAnalyzer::analyze(const edm::Event& iEvent, const edm::Ev
      lepton2_eta =genTop->at(0).lepton2().Eta();
      lepton2_phi =genTop->at(0).lepton2().Phi();
     
-     allHadronic      =genTop->at(0).allHadronic();
-     semiLeptonic     =genTop->at(0).semiLeptonic();
+     allHadronic       =genTop->at(0).allHadronic();
+     semiLeptonicM1    =genTop->at(0).semiLeptonic(-1);
+     semiLeptonic0     =genTop->at(0).semiLeptonic(0);
+     semiLeptonicP1    =genTop->at(0).semiLeptonic(1);
+
+     diLeptonicM1 =genTop->at(0).diLeptonic(-1);
+     diLeptonic0 =genTop->at(0).diLeptonic(0);
+     diLeptonicP1 =genTop->at(0).diLeptonic(1);
+
      diLeptonicMuoMuo =genTop->at(0).diLeptonicMuoMuo();
      diLeptonicMuoEle =genTop->at(0).diLeptonicMuoEle();
      diLeptonicEleEle =genTop->at(0).diLeptonicEleEle();
@@ -1304,7 +1326,15 @@ void TtbarBbbarDiLeptonAnalyzer::resetBrGEN()
    lepton2_phi =-9.0     ;//  cms.string("lepton2().Phi()"),
 
    allHadronic      =false;//  cms.string("allHadronic"),
-   semiLeptonic     =false;//  cms.string("semiLeptonic"),
+   semiLeptonicM1     =false;
+   semiLeptonic0     =false;
+   semiLeptonicP1     =false;
+
+
+   diLeptonicM1 =false;
+   diLeptonic0 =false;
+   diLeptonicP1 =false;
+
    diLeptonicMuoMuo =false;//  cms.string("diLeptonicMuoMuo"),
    diLeptonicMuoEle =false;//  cms.string("diLeptonicMuoEle"),
    diLeptonicEleEle =false;//  cms.string("diLeptonicEleEle"),
