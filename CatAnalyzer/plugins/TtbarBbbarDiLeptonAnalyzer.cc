@@ -17,7 +17,7 @@
 
 //#include "TopQuarkAnalysis/TopKinFitter/interface/TtFullLepKinSolver.h"
 //#include "CATTools/CatAnalyzer/interface/KinematicSolvers.h"
-#include "CATTools/CatAnalyzer/interface/CSVHelper.h"
+#include "CATHelpers/CSVHelper/interface/CSVHelper.h"
 //#include "CATTools/CatAnalyzer/interface/LeptonWeight.h"
 
 #include "CATTools/CommonTools/interface/AnalysisHelper.h"
