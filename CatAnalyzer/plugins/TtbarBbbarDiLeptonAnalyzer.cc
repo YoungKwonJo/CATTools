@@ -63,7 +63,7 @@ private:
   void selectMuons(const cat::MuonCollection& muons, LeptonCollection& selmuons) const;
   void selectElecs(const cat::ElectronCollection& elecs, LeptonCollection& selelecs) const;
 //  cat::JetCollection selectJets(const cat::JetCollection& jets, const LeptonCollection& recolep) const;
-  cat::JetCollection selectJets(const cat::JetCollection& jets, const LeptonCollection& recolep, TtbarBbbarDiLeptonAnalyzer::sys_e sys) const;
+  cat::JetCollection selectJets(const cat::JetCollection& jets, const LeptonCollection& recolep, TtbarBbbarDiLeptonAnalyzer::sys_e sys);
   cat::JetCollection selectBJets(const cat::JetCollection& jets, double workingpoint) const;
   const reco::Candidate* getLast(const reco::Candidate* p) const;
   const bool isLastP( const reco::GenParticle& p) const;
@@ -943,7 +943,7 @@ void TtbarBbbarDiLeptonAnalyzer::analyze(const edm::Event& iEvent, const edm::Ev
       b_jets_flavor.push_back(flavor);
       b_jets_bDiscriminatorCSV.push_back(bDisCSV);
     
-      if (runOnMC_) {
+/*      if (runOnMC_) {
         cat::Jet::JETFLAV fla = cat::Jet::JETFLAV_LIGHT;
         if (abs(flavor)==4){ fla=cat::Jet::JETFLAV_C; }
         if (abs(flavor)==5){ fla=cat::Jet::JETFLAV_B; }
@@ -958,7 +958,7 @@ void TtbarBbbarDiLeptonAnalyzer::analyze(const edm::Event& iEvent, const edm::Ev
         b_csvt_sf = b_csvt_sf*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_TIGHT,0,fla));
         b_csvt_sfup = b_csvt_sfup*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_TIGHT,1,fla));
         b_csvt_sfdw = b_csvt_sfdw*(jet1->scaleFactorCSVv2(cat::Jet::BTAGCSV_TIGHT,-1,fla));
-      }
+      }*/
     }
     
     if (runOnMC_){
@@ -1182,7 +1182,7 @@ void TtbarBbbarDiLeptonAnalyzer::selectElecs(const cat::ElectronCollection& elec
 }
 
 
-cat::JetCollection TtbarBbbarDiLeptonAnalyzer::selectJets(const cat::JetCollection& jets, const LeptonCollection& recolep, sys_e sys) const
+cat::JetCollection TtbarBbbarDiLeptonAnalyzer::selectJets(const cat::JetCollection& jets, const LeptonCollection& recolep, sys_e sys) 
 {
 /*
   cat::JetCollection seljets;
@@ -1223,8 +1223,20 @@ cat::JetCollection TtbarBbbarDiLeptonAnalyzer::selectJets(const cat::JetCollecti
     //if (sys == sys_btag_u) b_btagweight *= jet.scaleFactorCSVv2(cat::Jet::BTAGCSV_LOOSE, 1);
     //else if (sys == sys_btag_d) b_btagweight *= jet.scaleFactorCSVv2(cat::Jet::BTAGCSV_LOOSE, -1);
     //else b_btagweight *= jet.scaleFactorCSVv2(cat::Jet::BTAGCSV_LOOSE, 0);
-    
-	seljets.push_back(jet);
+////
+    b_csvl_sf   = b_csvl_sf   * jet.scaleFactorCSVv2(cat::Jet::BTAGCSV_LOOSE,0);
+    b_csvl_sfup = b_csvl_sfup * jet.scaleFactorCSVv2(cat::Jet::BTAGCSV_LOOSE,1);
+    b_csvl_sfdw = b_csvl_sfdw * jet.scaleFactorCSVv2(cat::Jet::BTAGCSV_LOOSE,-1);
+                              
+    b_csvm_sf   = b_csvm_sf   * jet.scaleFactorCSVv2(cat::Jet::BTAGCSV_MEDIUM,0);
+    b_csvm_sfup = b_csvm_sfup * jet.scaleFactorCSVv2(cat::Jet::BTAGCSV_MEDIUM,1);
+    b_csvm_sfdw = b_csvm_sfdw * jet.scaleFactorCSVv2(cat::Jet::BTAGCSV_MEDIUM,-1);
+                              
+    b_csvt_sf   = b_csvt_sf   * jet.scaleFactorCSVv2(cat::Jet::BTAGCSV_TIGHT,0);
+    b_csvt_sfup = b_csvt_sfup * jet.scaleFactorCSVv2(cat::Jet::BTAGCSV_TIGHT,1);
+    b_csvt_sfdw = b_csvt_sfdw * jet.scaleFactorCSVv2(cat::Jet::BTAGCSV_TIGHT,-1);
+  
+    seljets.push_back(jet);
   }
   return seljets;
 }
