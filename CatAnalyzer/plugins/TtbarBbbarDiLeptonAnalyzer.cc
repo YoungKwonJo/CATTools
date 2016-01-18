@@ -567,11 +567,11 @@ void TtbarBbbarDiLeptonAnalyzer::analyze(const edm::Event& iEvent, const edm::Ev
   edm::Handle<reco::GenParticleCollection> genParticles;
 ////////////
   edm::Handle<cat::GenTopCollection> genTop;
-  std::cout << "!!reading genTop" << std::endl;
+  //std::cout << "!!reading genTop" << std::endl;
   if ( iEvent.getByToken(GenTopToken_, genTop)){
     //for (auto& genTop : genTops) {
     
-     std::cout << "reading genTop" << std::endl;
+     //std::cout << "reading genTop" << std::endl;
      lepton1_pt  =genTop->at(0).lepton1().Pt();
      lepton1_eta =genTop->at(0).lepton1().Eta();
      lepton1_phi =genTop->at(0).lepton1().Phi();
