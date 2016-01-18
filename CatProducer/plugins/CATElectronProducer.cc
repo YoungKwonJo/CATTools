@@ -194,6 +194,37 @@ cat::CATElectronProducer::produce(edm::Event & iEvent, const edm::EventSetup & i
 
     aElectron.setSNUID(snu_id);
 
+    // Fill the validity flag of triggered MVA
+    bool isTrigMVAValid = false;
+    const double pt = aElectron.pt();
+    if ( pt > 15 ) {
+      const double abseta = std::abs(aPatElectron.superCluster()->eta());
+      const double full5x5_sigmaIetaIeta = aPatElectron.full5x5_sigmaIetaIeta();
+      const double hcalOverEcal =  aPatElectron.hcalOverEcal();
+      const double ecalPFClusterIso = aPatElectron.ecalPFClusterIso();
+      const double hcalPFClusterIso = aPatElectron.hcalPFClusterIso();
+      const double dr03TkSumPt = aPatElectron.dr03TkSumPt();
+      if ( abseta < 1.479 ) { // Barrel
+        const double deltaEtaSuperClusterTrackAtVtx = aPatElectron.deltaEtaSuperClusterTrackAtVtx();
+        const double deltaPhiSuperClusterTrackAtVtx = aPatElectron.deltaPhiSuperClusterTrackAtVtx();
+        if ( full5x5_sigmaIetaIeta < 0.012 and
+             hcalOverEcal < 0.09 and
+             ecalPFClusterIso < 0.37*pt and
+             hcalPFClusterIso < 0.25*pt and
+             dr03TkSumPt < 0.18*pt and
+             std::abs(deltaEtaSuperClusterTrackAtVtx) < 0.0095 and
+             std::abs(deltaPhiSuperClusterTrackAtVtx) < 0.065 ) isTrigMVAValid = true;
+      }
+      else { // Endcap
+        if ( full5x5_sigmaIetaIeta < 0.033 and
+             hcalOverEcal < 0.09 and
+             ecalPFClusterIso < 0.45*pt and
+             hcalPFClusterIso < 0.28*pt and
+             dr03TkSumPt < 0.18*pt ) isTrigMVAValid = true;
+      }
+    }
+    aElectron.setTrigMVAValid(isTrigMVAValid);
+
     out->push_back(aElectron);
 
     ++j;
@@ -262,14 +293,24 @@ int cat::CATElectronProducer::getSNUID(float full5x5_sigmaIetaIeta, float deltaE
 float
 cat::CATElectronProducer::getEffArea( float dR, float scEta)
 {
-  ElectronEffectiveArea::ElectronEffectiveAreaTarget electronEATarget;
-  if ( runOnMC_ ) electronEATarget = ElectronEffectiveArea::kEleEAFall11MC;
-  else electronEATarget = ElectronEffectiveArea::kEleEAData2012;
+  // ElectronEffectiveArea::ElectronEffectiveAreaTarget electronEATarget;
+  // if ( runOnMC_ ) electronEATarget = ElectronEffectiveArea::kEleEAFall11MC;
+  // else electronEATarget = ElectronEffectiveArea::kEleEAData2012;
+  // if( dR < 0.35)
+  //   return ElectronEffectiveArea::GetElectronEffectiveArea( ElectronEffectiveArea::kEleGammaAndNeutralHadronIso03, scEta, electronEATarget);
+  // else
+  //   return ElectronEffectiveArea::GetElectronEffectiveArea( ElectronEffectiveArea::kEleGammaAndNeutralHadronIso04, scEta, electronEATarget);
 
-  if( dR < 0.35)
-    return ElectronEffectiveArea::GetElectronEffectiveArea( ElectronEffectiveArea::kEleGammaAndNeutralHadronIso03, scEta, electronEATarget);
-  else
-    return ElectronEffectiveArea::GetElectronEffectiveArea( ElectronEffectiveArea::kEleGammaAndNeutralHadronIso04, scEta, electronEATarget);
+  // new effArea 
+  float absEta = std::abs(scEta);
+  if ( 0.0000 >= absEta && absEta < 1.0000 ) return 0.1752;
+  if ( 1.0000 >= absEta && absEta < 1.4790 ) return 0.1862;
+  if ( 1.4790 >= absEta && absEta < 2.0000 ) return 0.1411;
+  if ( 2.0000 >= absEta && absEta < 2.2000 ) return 0.1534;
+  if ( 2.2000 >= absEta && absEta < 2.3000 ) return 0.1903;
+  if ( 2.3000 >= absEta && absEta < 2.4000 ) return 0.2243;
+  if ( 2.4000 >= absEta && absEta < 5.0000 ) return 0.2687;
+  return 0;
 }
 
 bool
