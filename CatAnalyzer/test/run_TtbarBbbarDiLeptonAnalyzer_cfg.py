@@ -11,7 +11,7 @@ process.options.allowUnscheduled = cms.untracked.bool(True)
 
 process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring())
 #process.source.fileNames.append('/store/user/jhgoh/CATTools/sync/v7-6-1/TTbarXSecSynchronization_76X_MC_TT_powheg.root')
-process.source.fileNames = ['/store/user/jhgoh/CATTools/sync/v7-6-5/TT_TuneCUETP8M1_13TeV-powheg-pythia8.root',]
+#process.source.fileNames = ['/store/user/jhgoh/CATTools/sync/v7-6-5/TT_TuneCUETP8M1_13TeV-powheg-pythia8.root',]
 #process.source.fileNames = ['/store/user/jhgoh/CATTools/sync/v7-6-5/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8.root',]
 #process.source.fileNames = ['/store/user/jhgoh/CATTools/sync/v7-6-5/DoubleEG_Run2015D-16Dec2015-v2.root',]
 #process.source.fileNames = ['/store/user/jhgoh/CATTools/sync/v7-6-5/DoubleMuon_Run2015D-16Dec2015-v1.root',]
@@ -53,15 +53,16 @@ process.load("CATTools.CatAnalyzer.flatGenWeights_cfi")
 
 from CATTools.CatAnalyzer.leptonSF_cff import *
 
+pileupWeight="pileupWeight"
 ## Redo the pileup weight - necessary for v765 production
-process.load("CATTools.CatProducer.pileupWeight_cff")
-process.redoPileupWeight = process.pileupWeight.clone()
-from CATTools.CatProducer.pileupWeight_cff import pileupWeightMap
-process.redoPileupWeight.weightingMethod = "RedoWeight"
-process.redoPileupWeight.pileupMC = pileupWeightMap["2015_25ns_FallMC"]
-process.redoPileupWeight.pileupRD = pileupWeightMap["Cert_13TeV_16Dec2015ReReco_Collisions15_25ns_JSON"]
-process.redoPileupWeight.pileupUp = pileupWeightMap["Cert_13TeV_16Dec2015ReReco_Collisions15_25ns_JSON_Up"]
-process.redoPileupWeight.pileupDn = pileupWeightMap["Cert_13TeV_16Dec2015ReReco_Collisions15_25ns_JSON_Dn"]
+#process.load("CATTools.CatProducer.pileupWeight_cff")
+#process.redoPileupWeight = process.pileupWeight.clone()
+#from CATTools.CatProducer.pileupWeight_cff import pileupWeightMap
+#process.redoPileupWeight.weightingMethod = "RedoWeight"
+#process.redoPileupWeight.pileupMC = pileupWeightMap["2015_25ns_FallMC"]
+#process.redoPileupWeight.pileupRD = pileupWeightMap["Cert_13TeV_16Dec2015ReReco_Collisions15_25ns_JSON"]
+#process.redoPileupWeight.pileupUp = pileupWeightMap["Cert_13TeV_16Dec2015ReReco_Collisions15_25ns_JSON_Up"]
+#process.redoPileupWeight.pileupDn = pileupWeightMap["Cert_13TeV_16Dec2015ReReco_Collisions15_25ns_JSON_Dn"]
 
 process.cattree = cms.EDAnalyzer("TtbarBbbarDiLeptonAnalyzer",
     recoFilters = cms.InputTag("filterRECO"),
@@ -73,10 +74,9 @@ process.cattree = cms.EDAnalyzer("TtbarBbbarDiLeptonAnalyzer",
     topPtWeight = cms.InputTag("topPtWeight"),
 
     lumiSelection = cms.InputTag(lumiMask),
-    puweight = cms.InputTag("pileupWeight"),
-    puweightUp = cms.InputTag("pileupWeight","up"),
-    #puweightDown = cms.InputTag("pileupWeight","dn"),
-    puweightDown = cms.InputTag("redoPileupWeight","dn"), ## Redo the pileup weight for downward variation in v765 prod
+    puweight = cms.InputTag(pileupWeight),
+    puweightUp = cms.InputTag(pileupWeight,"up"),
+    puweightDown = cms.InputTag(pileupWeight,"dn"),
     trigMUEL = cms.InputTag("filterTrigMUEL"),
     trigMUMU = cms.InputTag("filterTrigMUMU"),
     trigELEL = cms.InputTag("filterTrigELEL"),
