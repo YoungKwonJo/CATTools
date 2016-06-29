@@ -25,6 +25,7 @@
 #include "CATTools/CommonTools/interface/AnalysisHelper.h"
 #include "DataFormats/Math/interface/deltaR.h"
 #include "TTree.h"
+//#include "TH1D.h"
 
 using namespace std;
 using namespace cat;
@@ -175,6 +176,7 @@ private:
   std::vector<float> b_jets_iCSVCvsL;
   std::vector<float> b_jets_CCvsLT;
   std::vector<float> b_jets_CCvsBT;
+  std::vector<float> b_jets_drbjetFromT;
 
   std::vector<int>    b_mvad_jetid;
 
@@ -307,6 +309,9 @@ private:
   BTagWeightEvaluator bTagWeightMVAM;
   BTagWeightEvaluator bTagWeightMVAT;
 */
+  //TH1D * hBjet_DRcsv1;
+  //TH1D * hBjet_DRcsv2;
+ 
 };
 //
 // constructors and destructor
@@ -394,7 +399,9 @@ TtbarBbbarDiLeptonAnalyzer::TtbarBbbarDiLeptonAnalyzer(const edm::ParameterSet& 
   //ttree13_ = fs->make<TTree>("nomMueff_dw", "nom2");
   //ttree14_ = fs->make<TTree>("nomEleff_up", "nom2");
   //ttree15_ = fs->make<TTree>("nomEleff_dw", "nom2");
-
+  //hBjet_DRcsv1 = fs->make<TH1D>("hBjet_DRcsv1","1st csv jet",50,0,5);
+  //hBjet_DRcsv2 = fs->make<TH1D>("hBjet_DRcsv2","2nd csv jet",50,0,5);
+ 
   book(ttree_);
   book(ttree2_);
   book(ttree3_);
@@ -518,6 +525,7 @@ void TtbarBbbarDiLeptonAnalyzer::book(TTree* tree){
   tree->Branch("jets_iCSVCvsL","std::vector<float>",&b_jets_iCSVCvsL);
   tree->Branch("jets_CCvsLT","std::vector<float>",&b_jets_CCvsLT);
   tree->Branch("jets_CCvsBT","std::vector<float>",&b_jets_CCvsBT);
+  tree->Branch("jets_drbjetFromT","std::vector<float>",&b_jets_drbjetFromT);
 
   tree->Branch("mvad_jetid","std::vector<int>",&b_mvad_jetid);
 
@@ -637,8 +645,10 @@ void TtbarBbbarDiLeptonAnalyzer::analyze(const edm::Event& iEvent, const edm::Ev
   ////////////
   edm::Handle<cat::GenTopCollection> genTop;
   //std::cout << "!!reading genTop" << std::endl;
+  bool isTTbar = false;
   if ( iEvent.getByToken(GenTopToken_, genTop)){
     //for (auto& genTop : genTops) {
+    isTTbar=true;
 
     //std::cout << "reading genTop" << std::endl;
     lepton1_pt  =genTop->at(0).lepton1().Pt();
@@ -1023,6 +1033,9 @@ void TtbarBbbarDiLeptonAnalyzer::analyze(const edm::Event& iEvent, const edm::Ev
       float cDisiCSVCvsL= (float) jet1->bDiscriminator(CTAG_iCSVCvsL);
       float cDisCCvsLT  = (float) jet1->bDiscriminator(CTAG_CCvsLT);
       float cDisCCvsBT  = (float) jet1->bDiscriminator(CTAG_CCvsBT);
+      float dR_bjetfromT= -99.;
+      if(isTTbar) dR_bjetfromT= (float) std::min(deltaR(jet1->p4(), genTop->at(0).bJetsFromTop1()), deltaR(jet1->p4(), genTop->at(0).bJetsFromTop2()) );
+
       //float bDisCSV= (float) jet1->bDiscriminator(BTAG_CSVv2+"AK4PFPuppi");
       int flavor = jet1->partonFlavour();
       mapJetBDiscriminator[idx] = bDisCSV;
@@ -1037,6 +1050,8 @@ void TtbarBbbarDiLeptonAnalyzer::analyze(const edm::Event& iEvent, const edm::Ev
       b_jets_iCSVCvsL.push_back(cDisiCSVCvsL);
       b_jets_CCvsLT.push_back(  cDisCCvsLT);
       b_jets_CCvsBT.push_back(  cDisCCvsBT);
+
+      b_jets_drbjetFromT.push_back(dR_bjetfromT);
 
     }
    
@@ -1306,6 +1321,7 @@ void TtbarBbbarDiLeptonAnalyzer::resetBrJets()
   b_csvweights.clear();
   b_csvweights2.clear();
   b_btagweightsCSVL.clear();  b_btagweightsCSVM.clear();  b_btagweightsCSVT.clear();
+  b_jets_drbjetFromT.clear();
   //b_mvaweights.clear(); b_btagweightsMVAL.clear();  b_btagweightsMVAM.clear();  b_btagweightsMVAT.clear();
 
 
