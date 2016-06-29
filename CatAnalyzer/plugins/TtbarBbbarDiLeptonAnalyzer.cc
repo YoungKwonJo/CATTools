@@ -1231,11 +1231,12 @@ cat::JetCollection TtbarBbbarDiLeptonAnalyzer::selectJets(const cat::JetCollecti
   cat::JetCollection seljets;
   for (auto& j : jets) {
     cat::Jet jet(j);
-    if (sys == sys_jes_u) jet.setP4(j.p4() * j.shiftedEnUp());
-    if (sys == sys_jes_d) jet.setP4(j.p4() * j.shiftedEnDown());
-    if (sys == sys_jer_n) jet.setP4(j.p4() * j.smearedRes());
-    if (sys == sys_jer_u) jet.setP4(j.p4() * j.smearedResUp());
-    if (sys == sys_jer_d) jet.setP4(j.p4() * j.smearedResDown());
+    if (sys == sys_jes_u)      jet.setP4(j.p4() * j.shiftedEnUp());
+    else if (sys == sys_jes_d) jet.setP4(j.p4() * j.shiftedEnDown());
+    else if (sys == sys_jer_n) jet.setP4(j.p4() );
+    else if (sys == sys_jer_u) jet.setP4(j.p4() * j.smearedResUp());
+    else if (sys == sys_jer_d) jet.setP4(j.p4() * j.smearedResDown());
+    else                       jet.setP4(j.p4() * j.smearedRes());
 
     if (jet.pt() < 30.) continue;
     if (std::abs(jet.eta()) > 2.4)  continue;
